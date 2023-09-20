@@ -33,12 +33,21 @@ const ConformanceCheckingSection = () => {
 
   const onRowSelect = (e) => {
     const rows = e.detail.selectedFlatRows.map((x) => x.original);
-
     setSelectedRows(rows);
   };
 
   useEffect(() => {
-    makeCompressedMaps().then((x) => setConstraintData(x));
+    makeCompressedMaps().then((result) =>
+      setConstraintData(
+        result.map((row) => ({
+          ...row,
+          nat_lang_template: row.nat_lang_template
+            .replace('{1}', `"${row.left_op}"`)
+            .replace('{2}', `"${row.right_op}"`)
+            .replace('{n}', row.constraint_string?.split('[')[0]?.slice(-1)),
+        }))
+      )
+    );
   }, []);
 
   const markNavigatedRow = useCallback(
@@ -48,12 +57,16 @@ const ConformanceCheckingSection = () => {
     [selectedRows]
   );
 
+  const deleteSelected = () =>
+    setConstraintData(without(constraintData, ...selectedRows));
+
   return (
     <>
       {constraintData ? (
         <AnalyticalTable
           markNavigatedRow={markNavigatedRow}
           groupable
+          scaleWidthMode="Grow"
           selectionMode="MultiSelect"
           onRowSelect={(e) => onRowSelect(e)}
           filterable
@@ -107,6 +120,12 @@ const ConformanceCheckingSection = () => {
               headerTooltip: 'model_id of the Constraint',
             },
             {
+              Header: 'Natural Language',
+              accessor: 'nat_lang_template',
+              headerTooltip: 'nat_lang_template',
+              width: 500,
+            },
+            {
               Cell: (instance) => {
                 const { cell, row, webComponentsReactProperties } = instance;
                 // disable buttons if overlay is active to prevent focus
@@ -136,6 +155,9 @@ const ConformanceCheckingSection = () => {
           data={constraintData}
         />
       ) : null}
+      <Button icon="delete" onClick={deleteSelected}>
+        Delete Selected
+      </Button>
     </>
   );
 };
