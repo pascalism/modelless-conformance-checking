@@ -118,7 +118,7 @@ const ConformanceCheckingSection = () => {
         onToggleHeaderContent={function ka() {}}
         style={{
           height: '2000px',
-          width: '1480px',
+          width: '1440px',
         }}
       >
         <Title>Input</Title>
