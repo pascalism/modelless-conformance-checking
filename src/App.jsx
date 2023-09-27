@@ -11,6 +11,9 @@ import {
   Title,
   FlexBox,
   Label,
+  FileUploader,
+  Avatar,
+  Badge,
 } from '@ui5/webcomponents-react';
 import '@ui5/webcomponents-icons/dist/AllIcons.js';
 import {
@@ -19,6 +22,7 @@ import {
   makeCompressedMapsOutput,
 } from './util';
 import { without } from 'lodash';
+import Graph from './Graph';
 
 const filterFn = (rows, accessor, filterValue) => {
   if (filterValue.length > 0) {
@@ -56,17 +60,20 @@ const ConformanceCheckingSection = () => {
         }))
       )
     );
-    makeCompressedMapsOutput().then((result) =>
-      setResultData(
-        // result
-        result.map((row) => ({
-          ...row,
-          nat_lang_template: row.nat_lang_template
-            ?.replace('{1}', `"${row.left_op}"`)
-            .replace('{2}', `"${row.right_op}"`)
-            .replace('{n}', row.constraint_string?.split('[')[0]?.slice(-1)),
-        }))
-      )
+    makeCompressedMapsOutput().then(
+      (result) =>
+        console.log(result.length) ||
+        setResultData(
+          // result
+          result.map((row) => ({
+            ...row,
+            subRows: row.model_name?.split('|').map((x) => ({ model: x })),
+            nat_lang_template: row.nat_lang_template
+              ?.replace('{1}', `"${row.left_op}"`)
+              .replace('{2}', `"${row.right_op}"`)
+              .replace('{n}', row.constraint_string?.split('[')[0]?.slice(-1)),
+          }))
+        )
     );
   }, []);
 
@@ -114,13 +121,19 @@ const ConformanceCheckingSection = () => {
             subHeader={<Label>Prototype</Label>}
           ></DynamicPageTitle>
         }
-        onPinnedStateChange={function ka() {}}
-        onToggleHeaderContent={function ka() {}}
         style={{
           height: '2000px',
           width: '1440px',
         }}
       >
+        <Title>Upload</Title>
+        <FileUploader hideInput>
+          <Avatar icon="upload" />
+        </FileUploader>
+        <FileUploader hideInput>
+          <Badge>{'Upload file'}</Badge>
+        </FileUploader>
+        <div style={{ margin: 100 }} />
         <Title>Input</Title>
         {constraintData ? (
           <AnalyticalTable
@@ -138,7 +151,7 @@ const ConformanceCheckingSection = () => {
                 accessor: 'Level',
                 headerTooltip: 'Level of the Constraint',
                 disableFilters: false,
-                disableGroupBy: true,
+                disableGroupBy: false,
                 disableSortBy: false,
                 Filter: ({ column, popoverRef }) => {
                   const handleChange = (event) => {
@@ -194,8 +207,18 @@ const ConformanceCheckingSection = () => {
                   const isOverlay = webComponentsReactProperties.showOverlay;
                   // console.log('This is your row data', row.original);
                   const onDelete = () => {
-                    console.log('delete', cell, row);
-                    setConstraintData(without(constraintData, row.original));
+                    const rows = row.original
+                      ? [row.original]
+                      : row.leafRows.map((x) => x.original);
+                    console.log(
+                      'delete',
+                      cell,
+                      row.original,
+                      rows,
+                      without(constraintData, ...rows)
+                    );
+
+                    setConstraintData(without(constraintData, ...rows));
                   };
                   return (
                     <Button
@@ -222,12 +245,18 @@ const ConformanceCheckingSection = () => {
         </Button>
         <div style={{ margin: 100 }} />
         <Title>Output</Title>
-        {constraintData ? (
+        {resultData ? (
           <AnalyticalTable
             groupable
             scaleWidthMode="Grow"
             filterable
             columns={[
+              {
+                Header: 'Relevance Score',
+                accessor: 'relevance_score',
+                headerTooltip: 'relevance_score',
+                disableGroupBy: true,
+              },
               {
                 Header: () => <span>Level</span>,
                 selectionMode: 'SingleSelect',
@@ -235,7 +264,7 @@ const ConformanceCheckingSection = () => {
                 accessor: 'Level',
                 headerTooltip: 'Level of the Constraint',
                 disableFilters: false,
-                disableGroupBy: true,
+                disableGroupBy: false,
                 disableSortBy: false,
                 Filter: ({ column, popoverRef }) => {
                   const handleChange = (event) => {
@@ -279,10 +308,23 @@ const ConformanceCheckingSection = () => {
                 headerTooltip: 'nat_lang_template',
                 width: 500,
               },
+              {
+                Header: 'Kind',
+                accessor: 'template',
+                headerTooltip: 'template',
+              },
+              {
+                Header: 'times this violation occurred',
+                accessor: 'num_violations',
+                headerTooltip: 'num_violations',
+              },
             ]}
             data={resultData}
           />
         ) : null}
+        <div style={{ margin: 100 }} />
+        <Title>Graph</Title>
+        <Graph />
       </DynamicPage>
     </>
   );
