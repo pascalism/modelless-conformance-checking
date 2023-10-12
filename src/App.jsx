@@ -15,14 +15,18 @@ import {
   Avatar,
   Badge,
 } from '@ui5/webcomponents-react';
+import EchartsComponent from 'echarts-for-react';
 import '@ui5/webcomponents-icons/dist/AllIcons.js';
+import calcChartOption from './calcCharOption';
 import {
   CONSTRAINT_LEVELS,
   makeCompressedMaps,
   makeCompressedMapsOutput,
 } from './util';
 import { without } from 'lodash';
+import valueFormatter from './valueFormatter';
 import Graph from './Graph';
+import data2 from './files/variant_array';
 
 const filterFn = (rows, accessor, filterValue) => {
   if (filterValue.length > 0) {
@@ -47,16 +51,21 @@ const ConformanceCheckingSection = () => {
     const rows = e.detail.selectedFlatRows.map((x) => x.original);
     setSelectedRows(rows);
   };
-
+  const { data } = valueFormatter({ data: data2 });
+  const defaultOptions = calcChartOption({
+    data,
+    locale: 'EN-US',
+  });
+  console.log(defaultOptions.series.data);
   useEffect(() => {
     makeCompressedMaps().then((result) =>
       setConstraintData(
         result.map((row) => ({
           ...row,
           nat_lang_template: row.nat_lang_template
-            .replace('{1}', `"${row.left_op}"`)
-            .replace('{2}', `"${row.right_op}"`)
-            .replace('{n}', row.constraint_string?.split('[')[0]?.slice(-1)),
+            .replaceAll('{1}', `"${row.left_op}"`)
+            .replaceAll('{2}', `"${row.right_op}"`)
+            .replaceAll('{n}', row.constraint_string?.split('[')[0]?.slice(-1)),
         }))
       )
     );
@@ -64,14 +73,16 @@ const ConformanceCheckingSection = () => {
       (result) =>
         console.log(result.length) ||
         setResultData(
-          // result
           result.map((row) => ({
             ...row,
             subRows: row.model_name?.split('|').map((x) => ({ model: x })),
             nat_lang_template: row.nat_lang_template
-              ?.replace('{1}', `"${row.left_op}"`)
-              .replace('{2}', `"${row.right_op}"`)
-              .replace('{n}', row.constraint_string?.split('[')[0]?.slice(-1)),
+              ?.replaceAll('{1}', `"${row.left_op}"`)
+              .replaceAll('{2}', `"${row.right_op}"`)
+              .replaceAll(
+                '{n}',
+                row.constraint_string?.split('[')[0]?.slice(-1)
+              ),
           }))
         )
     );
@@ -250,6 +261,7 @@ const ConformanceCheckingSection = () => {
             groupable
             scaleWidthMode="Grow"
             filterable
+            visibleRows="10"
             columns={[
               {
                 Header: 'Relevance Score',
@@ -325,6 +337,16 @@ const ConformanceCheckingSection = () => {
         <div style={{ margin: 100 }} />
         <Title>Graph</Title>
         <Graph />
+        <Title>Sunkey</Title>
+        <EchartsComponent
+          style={{
+            height: 1000,
+            width: 1000,
+          }}
+          option={defaultOptions}
+          lazyUpdate
+          notMerge
+        />
       </DynamicPage>
     </>
   );
