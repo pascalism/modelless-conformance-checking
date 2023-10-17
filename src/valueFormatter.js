@@ -2,19 +2,18 @@
 import { find } from 'lodash';
 
 export default ({ data, chartColors = [] }) => {
-  const measurePosition = 15;
-  const tree = rowsToTree({ rowData: data, measurePosition, chartColors });
+  const tree = rowsToTree({ rowData: data, chartColors });
 
   return { data: tree };
 };
 
 const rowsToTree = ({ rowData, chartColors = [] }) =>
   rowData.reduce((tree, currentRow, j) => {
-    const dimension = currentRow.slice(0, currentRow.length - 1);
+    const dimension = currentRow.events;
 
-    const measure = currentRow[currentRow.length - 1];
+    const info = currentRow;
 
-    dimension.reduce(addSingleRowToTree(dimension.length, measure, j), {
+    dimension.reduce(addSingleRowToTree(dimension.length, info, j), {
       parentChildren: tree,
       chartColors,
     });
@@ -22,15 +21,24 @@ const rowsToTree = ({ rowData, chartColors = [] }) =>
   }, []);
 
 const addSingleRowToTree =
-  (length, measure) =>
+  (length, { isFaulty, measure, faultyEventsFromVariant }) =>
   ({ parentChildren }, name, i) => {
     const node = find(parentChildren, { name });
-
+    let color;
+    const event = faultyEventsFromVariant.find((x) => x.faultyEvent === name);
+    let reason;
+    if (event) {
+      color = event?.level === 'faulty' ? '#FF0000' : ' #FFBF00';
+      reason = event?.reason;
+    } else {
+      color = isFaulty ? '#FFFF00' : '#008000';
+    }
     if (node) {
       return {
         parentChildren: node.children,
-        color: '#FF0000',
+        color: color,
         depth: node.depth,
+        reason: reason,
       };
     }
 
@@ -44,8 +52,9 @@ const addSingleRowToTree =
         value: measure,
         depth: i,
         itemStyle: {
-          color: '#FF0000',
+          color: color,
         },
+        reason: reason,
       });
     } else {
       parentChildren.push({
@@ -53,9 +62,10 @@ const addSingleRowToTree =
         children,
         depth: i,
         itemStyle: {
-          color: '#FF0000',
+          color: color,
         },
+        reason: reason,
       });
     }
-    return { parentChildren: children, color: '#FF0000', depth: i };
+    return { parentChildren: children, color: color, depth: i };
   };

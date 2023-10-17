@@ -2,7 +2,7 @@ import { isNil, isEmpty } from 'lodash';
 
 const tooltip =
   (locale) =>
-  ({ name, value }) => {
+  ({ name, value, data }) => {
     let displayName;
     if (isEmpty(name)) {
       displayName = 'Σ';
@@ -12,7 +12,7 @@ const tooltip =
       displayName = name;
     }
     const displayValue = isNil(value) ? '-' : value.toLocaleString(locale);
-    return `${displayName}: ${displayValue}`;
+    return `${displayName}: ${displayValue}; ${data.reason ? data.reason : ''}`;
   };
 
 export default ({ data = [], noAnimation }) => ({
