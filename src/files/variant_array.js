@@ -31,4 +31,11 @@ export default [
     'archive purchase order',
     2,
   ],
+  [
+    'check purchase order',
+    'check purchase order',
+    'create purchase order',
+    'archive purchase order',
+    2,
+  ],
 ];
