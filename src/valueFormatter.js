@@ -32,6 +32,7 @@ const addSingleRowToTree =
       reason = event?.reason;
     } else {
       color = isFaulty ? '#FFFF00' : '#008000';
+      reason = event?.reason;
     }
     if (node) {
       return {
@@ -47,7 +48,7 @@ const addSingleRowToTree =
     const isLeaf = i === length - 1;
 
     if (isLeaf) {
-      parentChildren.push({
+      parentChildren?.push({
         name,
         value: measure,
         depth: i,
@@ -57,7 +58,7 @@ const addSingleRowToTree =
         reason: reason,
       });
     } else {
-      parentChildren.push({
+      parentChildren?.push({
         name,
         children,
         depth: i,

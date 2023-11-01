@@ -23,10 +23,11 @@ import {
   makeCompressedMapsExampleInput,
   makeCompressedMapsExampleOutput,
 } from './util';
-import { without, isNil, isEmpty } from 'lodash';
+// import { makeCompressedMapsExampleOutput } from './files/output_bpichallenge';
+import { without, isNil, isEmpty, find, indexOf } from 'lodash';
 import valueFormatter from './valueFormatter';
-import Graph from './Graph';
-import data2 from './files/variant_array';
+// import Graph from './Graph';
+import data2 from './files/variant_array_short';
 
 const filterFn = (rows, accessor, filterValue) => {
   if (filterValue.length > 0) {
@@ -39,6 +40,12 @@ const filterFn = (rows, accessor, filterValue) => {
     });
   }
   return rows;
+};
+
+export const replaceAt = (array = [], index, value) => {
+  const ret = [...array];
+  ret[index] = value;
+  return ret;
 };
 
 const ConformanceCheckingSection = () => {
@@ -81,8 +88,25 @@ const ConformanceCheckingSection = () => {
 
   const findFaultyEvents = (event, faultyEvents) => {
     return faultyEvents.reduce((acc, current) => {
-      // actually contained
+      // event already exists in accumulator
+      const includedInArray = find(acc, { faultyEvent: current.eventName });
+
+      if (!isNil(includedInArray)) {
+        console.log(
+          'already contained',
+          acc,
+          current.eventName,
+          includedInArray
+        );
+
+        return replaceAt(acc, indexOf(acc, includedInArray), {
+          faultyEvent: event,
+          reason: `${includedInArray.reason} | ${current.reason}`,
+          level: 'faulty',
+        });
+      }
       if (current.eventName === event) {
+        // actually contained
         return [
           ...acc,
           { faultyEvent: event, reason: current.reason, level: 'faulty' },
@@ -91,10 +115,29 @@ const ConformanceCheckingSection = () => {
       // partly contained
       const partlyContainedEvents = event
         .split(' ')
-        ?.reduce((acc, currentEventNameSplit) => {
+        ?.reduce((acc2, currentEventNameSplit) => {
           if (current.eventName === currentEventNameSplit) {
+            console.log(current.eventName, event);
+            const includedInArray = find(acc, {
+              faultyEvent: event,
+            });
+
+            if (!isNil(includedInArray)) {
+              console.log(
+                'already contained',
+                acc,
+                current.eventName,
+                includedInArray
+              );
+
+              return replaceAt(acc2, indexOf(acc2, includedInArray), {
+                faultyEvent: event,
+                reason: `${includedInArray.reason} | ${current.reason}`,
+                level: 'faulty',
+              });
+            }
             return [
-              ...acc,
+              ...acc2,
               {
                 faultyEvent: event,
                 reason: current.reason,
@@ -135,6 +178,7 @@ const ConformanceCheckingSection = () => {
         const faultyEventsFromVariant = events
           .map((event) => findFaultyEvents(event, faultyEvents))
           .flat();
+        console.log(faultyEventsFromVariant);
         const measure = currentRow[currentRow.length - 1];
         return {
           events,
@@ -143,11 +187,12 @@ const ConformanceCheckingSection = () => {
           faultyEventsFromVariant,
         };
       });
-      const newData = valueFormatter({ data: enhancedRows });
+
+      const { data } = valueFormatter({ data: enhancedRows });
 
       setSunburstData(
         sunburstOptions({
-          data: newData.data,
+          data: data,
           locale: 'EN-US',
         })
       );
@@ -163,7 +208,7 @@ const ConformanceCheckingSection = () => {
 
   const deleteSelected = () =>
     setConstraintData(without(constraintData, ...selectedRows));
-  console.log(sunburstData);
+
   return (
     <>
       <DynamicPage
