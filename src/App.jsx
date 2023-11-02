@@ -26,7 +26,7 @@ import {
 // import { makeCompressedMapsExampleOutput } from './files/output_bpichallenge';
 import { without, isNil, isEmpty, find, indexOf } from 'lodash';
 import valueFormatter from './valueFormatter';
-// import Graph from './Graph';
+import Graph from './Graph';
 import data2 from './files/variant_array_short';
 
 const filterFn = (rows, accessor, filterValue) => {
@@ -42,7 +42,7 @@ const filterFn = (rows, accessor, filterValue) => {
   return rows;
 };
 
-export const replaceAt = (array = [], index, value) => {
+const replaceAt = (array = [], index, value) => {
   const ret = [...array];
   ret[index] = value;
   return ret;
@@ -88,25 +88,8 @@ const ConformanceCheckingSection = () => {
 
   const findFaultyEvents = (event, faultyEvents) => {
     return faultyEvents.reduce((acc, current) => {
-      // event already exists in accumulator
-      const includedInArray = find(acc, { faultyEvent: current.eventName });
-
-      if (!isNil(includedInArray)) {
-        console.log(
-          'already contained',
-          acc,
-          current.eventName,
-          includedInArray
-        );
-
-        return replaceAt(acc, indexOf(acc, includedInArray), {
-          faultyEvent: event,
-          reason: `${includedInArray.reason} | ${current.reason}`,
-          level: 'faulty',
-        });
-      }
+      // actually contained
       if (current.eventName === event) {
-        // actually contained
         return [
           ...acc,
           { faultyEvent: event, reason: current.reason, level: 'faulty' },
@@ -115,29 +98,10 @@ const ConformanceCheckingSection = () => {
       // partly contained
       const partlyContainedEvents = event
         .split(' ')
-        ?.reduce((acc2, currentEventNameSplit) => {
+        ?.reduce((acc, currentEventNameSplit) => {
           if (current.eventName === currentEventNameSplit) {
-            console.log(current.eventName, event);
-            const includedInArray = find(acc, {
-              faultyEvent: event,
-            });
-
-            if (!isNil(includedInArray)) {
-              console.log(
-                'already contained',
-                acc,
-                current.eventName,
-                includedInArray
-              );
-
-              return replaceAt(acc2, indexOf(acc2, includedInArray), {
-                faultyEvent: event,
-                reason: `${includedInArray.reason} | ${current.reason}`,
-                level: 'faulty',
-              });
-            }
             return [
-              ...acc2,
+              ...acc,
               {
                 faultyEvent: event,
                 reason: current.reason,
@@ -156,14 +120,27 @@ const ConformanceCheckingSection = () => {
       const faultyEvents = [
         ...new Set(
           resultData.reduce((acc, currentRow) => {
+            const a = find(acc, { eventName: currentRow.left_op });
+            if (!isNil(a)) {
+              console.log(
+                replaceAt(acc, indexOf(acc, a), {
+                  eventName: currentRow.left_op,
+                  reason: !isNil(a)
+                    ? `${a.reason} | ${currentRow.nat_lang_template}`
+                    : currentRow.nat_lang_template,
+                })
+              );
+              return replaceAt(acc, indexOf(acc, a), {
+                eventName: currentRow.left_op,
+                reason: !isNil(a)
+                  ? `${a.reason} <br /> ${currentRow.nat_lang_template}`
+                  : currentRow.nat_lang_template,
+              });
+            }
             return [
               ...acc,
               {
                 eventName: currentRow.left_op,
-                reason: currentRow.nat_lang_template,
-              },
-              {
-                eventName: currentRow.right_op,
                 reason: currentRow.nat_lang_template,
               },
             ];
@@ -178,7 +155,7 @@ const ConformanceCheckingSection = () => {
         const faultyEventsFromVariant = events
           .map((event) => findFaultyEvents(event, faultyEvents))
           .flat();
-        console.log(faultyEventsFromVariant);
+
         const measure = currentRow[currentRow.length - 1];
         return {
           events,
@@ -188,11 +165,11 @@ const ConformanceCheckingSection = () => {
         };
       });
 
-      const { data } = valueFormatter({ data: enhancedRows });
+      const newData = valueFormatter({ data: enhancedRows });
 
       setSunburstData(
         sunburstOptions({
-          data: data,
+          data: newData.data,
           locale: 'EN-US',
         })
       );

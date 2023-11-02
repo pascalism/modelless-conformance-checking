@@ -12,13 +12,17 @@ const tooltip =
       displayName = name;
     }
     const displayValue = isNil(value) ? '-' : value.toLocaleString(locale);
-    return `${displayName}: ${displayValue}; ${data.reason ? data.reason : ''}`;
+
+    return `${displayName}: ${displayValue}; <br />${
+      data.reason ? data.reason : ''
+    }`;
   };
 
 export default ({ data = [], noAnimation }) => ({
   animation: !noAnimation,
   tooltip: {
     show: true,
+    confine: true,
     formatter: tooltip('en-US'),
   },
   series: {
