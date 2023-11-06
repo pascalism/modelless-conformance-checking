@@ -10,6 +10,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@agjs/react-right-click-menu": "0.0.8",
     "@ui5/webcomponents": "^1.17.0",
     "@ui5/webcomponents-fiori": "^1.17.0",
     "@ui5/webcomponents-react": "^1.19.0",

@@ -1,5 +1,5 @@
 /* eslint-disable react/prop-types */
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import {
   AnalyticalTable,
   MultiComboBox,
@@ -17,6 +17,7 @@ import {
 } from '@ui5/webcomponents-react';
 import EchartsComponent from 'echarts-for-react';
 import '@ui5/webcomponents-icons/dist/AllIcons.js';
+import ContextMenu from '@agjs/react-right-click-menu';
 import sunburstOptions from './calcCharOption';
 import {
   CONSTRAINT_LEVELS,
@@ -49,6 +50,8 @@ const replaceAt = (array = [], index, value) => {
 };
 
 const ConformanceCheckingSection = () => {
+  const [rightClickInfo, setRightClickInfo] = useState();
+
   const [constraintData, setConstraintData] = useState();
   const [resultData, setResultData] = useState();
 
@@ -114,7 +117,8 @@ const ConformanceCheckingSection = () => {
       return [...acc, ...partlyContainedEvents];
     }, []);
   };
-
+  const [isMenuShown, setIsMenuShown] = useState(false);
+  const ref = useRef();
   useEffect(() => {
     if (!isNil(resultData)) {
       const faultyEvents = [
@@ -169,6 +173,7 @@ const ConformanceCheckingSection = () => {
 
       setSunburstData(
         sunburstOptions({
+          setRightClickInfo: setRightClickInfo,
           data: newData.data,
           locale: 'EN-US',
         })
@@ -427,15 +432,37 @@ const ConformanceCheckingSection = () => {
         <Graph /> */}
         <Title>Sunburst</Title>
         {sunburstData ? (
-          <EchartsComponent
-            style={{
-              height: 1000,
-              width: 1000,
-            }}
-            option={sunburstData}
-            lazyUpdate
-            notMerge
-          />
+          <>
+            <div ref={ref}>
+              <EchartsComponent
+                style={{
+                  height: 1000,
+                  width: 1000,
+                }}
+                option={sunburstData}
+                lazyUpdate
+                notMerge
+              />
+            </div>
+            <ContextMenu
+              isOpenAfterInteraction={false}
+              trigger={ref}
+              component={
+                <h1
+                  style={{
+                    margin: 0,
+                    padding: 0,
+                  }}
+                >
+                  {console.log(rightClickInfo) || rightClickInfo
+                    ? rightClickInfo
+                    : 'Hello, World'}
+                </h1>
+              }
+              isOpen={isMenuShown}
+              setIsOpen={setIsMenuShown}
+            />
+          </>
         ) : null}
       </DynamicPage>
     </>
