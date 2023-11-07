@@ -14,7 +14,7 @@ const tooltip =
     const displayValue = isNil(value) ? '-' : value.toLocaleString(locale);
 
     return `${displayName}: ${displayValue}; <br />${
-      data.reason ? data.reason : ''
+      data.reason ? data.reason.map((x) => x.reason).join('<br />') : ''
     }`;
   };
 

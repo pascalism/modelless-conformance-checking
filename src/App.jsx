@@ -136,15 +136,31 @@ const ConformanceCheckingSection = () => {
               return replaceAt(acc, indexOf(acc, a), {
                 eventName: currentRow.left_op,
                 reason: !isNil(a)
-                  ? `${a.reason} <br /> ${currentRow.nat_lang_template}`
-                  : currentRow.nat_lang_template,
+                  ? [
+                      ...a.reason,
+                      {
+                        reason: currentRow.nat_lang_template,
+                        id: currentRow.obs_id,
+                      },
+                    ]
+                  : [
+                      {
+                        reason: currentRow.nat_lang_template,
+                        id: currentRow.obs_id,
+                      },
+                    ],
               });
             }
             return [
               ...acc,
               {
                 eventName: currentRow.left_op,
-                reason: currentRow.nat_lang_template,
+                reason: [
+                  {
+                    reason: currentRow.nat_lang_template,
+                    id: currentRow.obs_id,
+                  },
+                ],
               },
             ];
           }, [])
@@ -193,13 +209,6 @@ const ConformanceCheckingSection = () => {
 
   return (
     <>
-      <Button
-        onClick={() => {
-          setDialogIsOpen(true);
-        }}
-      >
-        Open Dialog
-      </Button>
       <Dialog
         open={dialogIsOpen}
         onAfterClose={() => setDialogIsOpen(false)}
@@ -214,8 +223,13 @@ const ConformanceCheckingSection = () => {
           columns={[
             {
               Header: 'Constraint',
-              accessor: 'constraint',
-              headerTooltip: 'constraint',
+              accessor: 'reason',
+              headerTooltip: 'reason',
+            },
+            {
+              Header: 'ID',
+              accessor: 'id',
+              headerTooltip: 'id',
             },
             {
               Cell: (instance) => {
@@ -273,21 +287,12 @@ const ConformanceCheckingSection = () => {
             console.log(
               ignoreConstraint,
               constraintData.filter(
-                (x) =>
-                  !ignoreConstraint
-                    .map((x) => x.constraint.replaceAll('"', '\\"'))
-                    .includes(x.nat_lang_template)
+                (x) => !find(ignoreConstraint, { id: x.obs_id })
               )
             );
             setDialogIsOpen(false);
-            setConstraintData(
-              constraintData.filter(
-                (x) =>
-                  !ignoreConstraint
-                    .map((x) => x.constraint.replaceAll('"', '\\"'))
-                    .includes(x.nat_lang_template)
-              )
-            );
+            setConstraintData(constraintData.filter(x=>x));
+            console.log('after', constraintData);
             setIgnoreConstraint([]);
           }}
         >
@@ -540,9 +545,7 @@ const ConformanceCheckingSection = () => {
               event.event.preventDefault();
               setRightClickInfo({
                 name: data.name,
-                reason: data.reason
-                  ?.split('<br />')
-                  ?.map((x) => ({ constraint: x })),
+                reason: data.reason,
               });
               setDialogIsOpen(true);
             },
