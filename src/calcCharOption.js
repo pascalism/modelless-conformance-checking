@@ -1,7 +1,7 @@
 import { isNil, isEmpty } from 'lodash';
 
 const tooltip =
-  (locale, setRightClickInfo) =>
+  (locale) =>
   ({ name, value, data }) => {
     let displayName;
     if (isEmpty(name)) {
@@ -13,7 +13,6 @@ const tooltip =
     }
     const displayValue = isNil(value) ? '-' : value.toLocaleString(locale);
 
-    setRightClickInfo(data.reason);
     return `${displayName}: ${displayValue}; <br />${
       data.reason ? data.reason : ''
     }`;

@@ -14,6 +14,7 @@ import {
   FileUploader,
   Avatar,
   Badge,
+  Dialog,
 } from '@ui5/webcomponents-react';
 import EchartsComponent from 'echarts-for-react';
 import '@ui5/webcomponents-icons/dist/AllIcons.js';
@@ -50,7 +51,8 @@ const replaceAt = (array = [], index, value) => {
 };
 
 const ConformanceCheckingSection = () => {
-  const [rightClickInfo, setRightClickInfo] = useState();
+  const [rightClickInfo, setRightClickInfo] = useState(false);
+  const [dialogIsOpen, setDialogIsOpen] = useState(false);
 
   const [constraintData, setConstraintData] = useState();
   const [resultData, setResultData] = useState();
@@ -95,7 +97,12 @@ const ConformanceCheckingSection = () => {
       if (current.eventName === event) {
         return [
           ...acc,
-          { faultyEvent: event, reason: current.reason, level: 'faulty' },
+          {
+            faultyEvent: event,
+            reason: current.reason,
+            level: 'faulty',
+            rest: current,
+          },
         ];
       }
       // partly contained
@@ -109,6 +116,7 @@ const ConformanceCheckingSection = () => {
                 faultyEvent: event,
                 reason: current.reason,
                 level: 'partlyFaulty',
+                rest: current,
               },
             ];
           }
@@ -117,8 +125,7 @@ const ConformanceCheckingSection = () => {
       return [...acc, ...partlyContainedEvents];
     }, []);
   };
-  const [isMenuShown, setIsMenuShown] = useState(false);
-  const ref = useRef();
+
   useEffect(() => {
     if (!isNil(resultData)) {
       const faultyEvents = [
@@ -126,14 +133,6 @@ const ConformanceCheckingSection = () => {
           resultData.reduce((acc, currentRow) => {
             const a = find(acc, { eventName: currentRow.left_op });
             if (!isNil(a)) {
-              console.log(
-                replaceAt(acc, indexOf(acc, a), {
-                  eventName: currentRow.left_op,
-                  reason: !isNil(a)
-                    ? `${a.reason} | ${currentRow.nat_lang_template}`
-                    : currentRow.nat_lang_template,
-                })
-              );
               return replaceAt(acc, indexOf(acc, a), {
                 eventName: currentRow.left_op,
                 reason: !isNil(a)
@@ -173,7 +172,6 @@ const ConformanceCheckingSection = () => {
 
       setSunburstData(
         sunburstOptions({
-          setRightClickInfo: setRightClickInfo,
           data: newData.data,
           locale: 'EN-US',
         })
@@ -191,8 +189,111 @@ const ConformanceCheckingSection = () => {
   const deleteSelected = () =>
     setConstraintData(without(constraintData, ...selectedRows));
 
+  const [ignoreConstraint, setIgnoreConstraint] = useState([]);
+
   return (
     <>
+      <Button
+        onClick={() => {
+          setDialogIsOpen(true);
+        }}
+      >
+        Open Dialog
+      </Button>
+      <Dialog
+        open={dialogIsOpen}
+        onAfterClose={() => setDialogIsOpen(false)}
+        style={{ height: '100%', width: '100%' }}
+      >
+        <div>{rightClickInfo?.name}</div>
+        <AnalyticalTable
+          groupable
+          scaleWidthMode="Grow"
+          filterable
+          data={rightClickInfo?.reason}
+          columns={[
+            {
+              Header: 'Constraint',
+              accessor: 'constraint',
+              headerTooltip: 'constraint',
+            },
+            {
+              Cell: (instance) => {
+                const { cell, row, webComponentsReactProperties } = instance;
+                // disable buttons if overlay is active to prevent focus
+                const isOverlay = webComponentsReactProperties.showOverlay;
+                // console.log('This is your row data', row.original);
+                const onDelete = () => {
+                  const rows = row.original
+                    ? [row.original]
+                    : row.leafRows.map((x) => x.original);
+                  console.log(
+                    'delete',
+                    cell,
+                    rows,
+                    without(rightClickInfo.reason, ...rows)
+                  );
+                  setIgnoreConstraint([...ignoreConstraint, ...rows]);
+
+                  setRightClickInfo({
+                    ...rightClickInfo,
+                    reason: without(rightClickInfo.reason, ...rows),
+                  });
+                };
+                return (
+                  <Button
+                    icon="delete"
+                    disabled={isOverlay}
+                    onClick={onDelete}
+                  />
+                );
+              },
+              Header: '',
+              accessor: '.',
+              width: 50,
+              disableFilters: true,
+              disableGroupBy: true,
+              disableResizing: true,
+              disableSortBy: true,
+              id: 'actions',
+            },
+          ]}
+        />
+        <Button
+          onClick={() => {
+            setDialogIsOpen(false);
+            setIgnoreConstraint([]);
+          }}
+        >
+          Close
+        </Button>
+        <Button
+          onClick={() => {
+            // IGNORE
+            console.log(
+              ignoreConstraint,
+              constraintData.filter(
+                (x) =>
+                  !ignoreConstraint
+                    .map((x) => x.constraint.replaceAll('"', '\\"'))
+                    .includes(x.nat_lang_template)
+              )
+            );
+            setDialogIsOpen(false);
+            setConstraintData(
+              constraintData.filter(
+                (x) =>
+                  !ignoreConstraint
+                    .map((x) => x.constraint.replaceAll('"', '\\"'))
+                    .includes(x.nat_lang_template)
+              )
+            );
+            setIgnoreConstraint([]);
+          }}
+        >
+          Apply
+        </Button>
+      </Dialog>
       <DynamicPage
         headerContent={
           <DynamicPageHeader>
@@ -238,8 +339,8 @@ const ConformanceCheckingSection = () => {
           <Badge>{'Upload file'}</Badge>
         </FileUploader>
         <div style={{ margin: 100 }} />
-        {/* <Title>Input</Title>
-        {constraintData ? (
+        <Title>Input</Title>
+        {/* {constraintData ? (
           <AnalyticalTable
             markNavigatedRow={markNavigatedRow}
             groupable
@@ -344,9 +445,9 @@ const ConformanceCheckingSection = () => {
             data={constraintData}
           />
         ) : null} */}
-        {/* <Button icon="delete" onClick={deleteSelected}>
+        <Button icon="delete" onClick={deleteSelected}>
           Delete Selected
-        </Button> */}
+        </Button>
         <div style={{ margin: 100 }} />
         <Title>Output</Title>
         {resultData ? (
@@ -431,39 +532,29 @@ const ConformanceCheckingSection = () => {
         {/* <Title>Graph</Title>
         <Graph /> */}
         <Title>Sunburst</Title>
-        {sunburstData ? (
-          <>
-            <div ref={ref}>
-              <EchartsComponent
-                style={{
-                  height: 1000,
-                  width: 1000,
-                }}
-                option={sunburstData}
-                lazyUpdate
-                notMerge
-              />
-            </div>
-            <ContextMenu
-              isOpenAfterInteraction={false}
-              trigger={ref}
-              component={
-                <h1
-                  style={{
-                    margin: 0,
-                    padding: 0,
-                  }}
-                >
-                  {console.log(rightClickInfo) || rightClickInfo
-                    ? rightClickInfo
-                    : 'Hello, World'}
-                </h1>
-              }
-              isOpen={isMenuShown}
-              setIsOpen={setIsMenuShown}
-            />
-          </>
-        ) : null}
+
+        <EchartsComponent
+          onEvents={{
+            contextmenu: ({ data, event }) => {
+              console.log(data, event);
+              event.event.preventDefault();
+              setRightClickInfo({
+                name: data.name,
+                reason: data.reason
+                  ?.split('<br />')
+                  ?.map((x) => ({ constraint: x })),
+              });
+              setDialogIsOpen(true);
+            },
+          }}
+          style={{
+            height: 1000,
+            width: 1000,
+          }}
+          option={sunburstData ? sunburstData : []}
+          lazyUpdate
+          notMerge
+        />
       </DynamicPage>
     </>
   );
