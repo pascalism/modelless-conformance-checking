@@ -1,5 +1,5 @@
 /* eslint-disable react/prop-types */
-import { useEffect, useState, useCallback, useRef } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import {
   AnalyticalTable,
   MultiComboBox,
@@ -18,7 +18,6 @@ import {
 } from '@ui5/webcomponents-react';
 import EchartsComponent from 'echarts-for-react';
 import '@ui5/webcomponents-icons/dist/AllIcons.js';
-import ContextMenu from '@agjs/react-right-click-menu';
 import sunburstOptions from './calcCharOption';
 import {
   CONSTRAINT_LEVELS,
@@ -26,10 +25,11 @@ import {
   makeCompressedMapsExampleOutput,
 } from './util';
 // import { makeCompressedMapsExampleOutput } from './files/output_bpichallenge';
-import { without, isNil, isEmpty, find, indexOf } from 'lodash';
+import { without, isNil, isEmpty, find, indexOf, uniqBy, tail } from 'lodash';
 import valueFormatter from './valueFormatter';
 import Graph from './Graph';
 import data2 from './files/variant_array_short';
+import Plot from 'react-plotly.js';
 
 const filterFn = (rows, accessor, filterValue) => {
   if (filterValue.length > 0) {
@@ -51,6 +51,80 @@ const replaceAt = (array = [], index, value) => {
 };
 
 const ConformanceCheckingSection = () => {
+  function reduceToSankeyArray(inputData) {
+    const data = [];
+    const links = [];
+
+    inputData.map((entry, index) => {
+      const eventCount = entry[entry.length - 1];
+      const nodes = entry.slice(0, -1); // Exclude the last element (count)
+
+      for (let i = 0; i < nodes.length - 1; i++) {
+        const sourceNode = nodes[i];
+        const targetNode = nodes[i + 1];
+
+        if (!data.find((x) => x.name === sourceNode + index + i)) {
+          data.push({ name: sourceNode });
+        }
+
+        if (!data.find((x) => x.name === targetNode + index + i)) {
+          data.push({ name: targetNode });
+        }
+
+        const existingLink = links.find(
+          (x) => x.source === sourceNode && x.target === targetNode
+        );
+
+        if (existingLink) {
+          existingLink.value += eventCount;
+        } else {
+          links.push({
+            source: sourceNode,
+            target: targetNode,
+            value: eventCount,
+          });
+        }
+      }
+    });
+    // Consolidate links with the same source and target nodes
+    const consolidatedLinks = [];
+    links.forEach((link) => {
+      const existingConsolidatedLink = consolidatedLinks.find(
+        (x) => x.source === link.source && x.target === link.target
+      );
+
+      if (existingConsolidatedLink) {
+        existingConsolidatedLink.value += link.value;
+      } else {
+        consolidatedLinks.push({ ...link });
+      }
+    });
+
+    return { data: uniqBy(data, 'name'), links: consolidatedLinks };
+  }
+  const { data, links } = reduceToSankeyArray(data2);
+
+  const { source, target, value } = links
+    .map((x) => [
+      indexOf(
+        data.map((x) => x.name),
+        x.source
+      ),
+      indexOf(
+        data.map((x) => x.name),
+        x.target
+      ),
+      x.value,
+    ])
+    .reduce(
+      ({ source, target, value }, current) => ({
+        source: [...source, current[0]],
+        target: [...target, current[1]],
+        value: [...value, current[2]],
+      }),
+      { source: [], target: [], value: [] }
+    );
+
   const [rightClickInfo, setRightClickInfo] = useState(false);
   const [dialogIsOpen, setDialogIsOpen] = useState(false);
 
@@ -59,6 +133,7 @@ const ConformanceCheckingSection = () => {
 
   const [selectedRows, setSelectedRows] = useState([]);
   const [sunburstData, setSunburstData] = useState();
+  const [faultyEvents, setFaultyEvents] = useState([]);
 
   const onRowSelect = (e) => {
     const rows = e.detail.selectedFlatRows.map((x) => x.original);
@@ -91,8 +166,8 @@ const ConformanceCheckingSection = () => {
     );
   }, []);
 
-  const findFaultyEvents = (event, faultyEvents) => {
-    return faultyEvents.reduce((acc, current) => {
+  const findFaultyEvents = (event, faultyEventsArray) => {
+    return faultyEventsArray.reduce((acc, current) => {
       // actually contained
       if (current.eventName === event) {
         return [
@@ -101,7 +176,6 @@ const ConformanceCheckingSection = () => {
             faultyEvent: event,
             reason: current.reason,
             level: 'faulty',
-            rest: current,
           },
         ];
       }
@@ -116,7 +190,6 @@ const ConformanceCheckingSection = () => {
                 faultyEvent: event,
                 reason: current.reason,
                 level: 'partlyFaulty',
-                rest: current,
               },
             ];
           }
@@ -128,7 +201,7 @@ const ConformanceCheckingSection = () => {
 
   useEffect(() => {
     if (!isNil(resultData)) {
-      const faultyEvents = [
+      const faultyEventsArray = [
         ...new Set(
           resultData.reduce((acc, currentRow) => {
             const a = find(acc, { eventName: currentRow.left_op });
@@ -140,13 +213,13 @@ const ConformanceCheckingSection = () => {
                       ...a.reason,
                       {
                         reason: currentRow.nat_lang_template,
-                        id: currentRow.obs_id,
+                        obs_id: currentRow.obs_id,
                       },
                     ]
                   : [
                       {
                         reason: currentRow.nat_lang_template,
-                        id: currentRow.obs_id,
+                        obs_id: currentRow.obs_id,
                       },
                     ],
               });
@@ -158,7 +231,7 @@ const ConformanceCheckingSection = () => {
                 reason: [
                   {
                     reason: currentRow.nat_lang_template,
-                    id: currentRow.obs_id,
+                    obs_id: currentRow.obs_id,
                   },
                 ],
               },
@@ -172,7 +245,7 @@ const ConformanceCheckingSection = () => {
         // here we need a magic function that returns all relevant events
         // faulty = includesEvent | includes part of a faulty event name | not faulty
         const faultyEventsFromVariant = events
-          .map((event) => findFaultyEvents(event, faultyEvents))
+          .map((event) => findFaultyEvents(event, faultyEventsArray))
           .flat();
 
         const measure = currentRow[currentRow.length - 1];
@@ -185,6 +258,9 @@ const ConformanceCheckingSection = () => {
       });
 
       const newData = valueFormatter({ data: enhancedRows });
+      setFaultyEvents(
+        enhancedRows.map((x) => x.faultyEventsFromVariant).flat()
+      );
 
       setSunburstData(
         sunburstOptions({
@@ -217,7 +293,7 @@ const ConformanceCheckingSection = () => {
         <div>{rightClickInfo?.name}</div>
         <AnalyticalTable
           groupable
-          scaleWidthMode="Grow"
+          scaleWidthMode="Smart"
           filterable
           data={rightClickInfo?.reason}
           columns={[
@@ -227,13 +303,8 @@ const ConformanceCheckingSection = () => {
               headerTooltip: 'reason',
             },
             {
-              Header: 'ID',
-              accessor: 'id',
-              headerTooltip: 'id',
-            },
-            {
               Cell: (instance) => {
-                const { cell, row, webComponentsReactProperties } = instance;
+                const { row, webComponentsReactProperties } = instance;
                 // disable buttons if overlay is active to prevent focus
                 const isOverlay = webComponentsReactProperties.showOverlay;
                 // console.log('This is your row data', row.original);
@@ -241,12 +312,7 @@ const ConformanceCheckingSection = () => {
                   const rows = row.original
                     ? [row.original]
                     : row.leafRows.map((x) => x.original);
-                  console.log(
-                    'delete',
-                    cell,
-                    rows,
-                    without(rightClickInfo.reason, ...rows)
-                  );
+
                   setIgnoreConstraint([...ignoreConstraint, ...rows]);
 
                   setRightClickInfo({
@@ -273,31 +339,30 @@ const ConformanceCheckingSection = () => {
             },
           ]}
         />
-        <Button
-          onClick={() => {
-            setDialogIsOpen(false);
-            setIgnoreConstraint([]);
-          }}
-        >
-          Close
-        </Button>
-        <Button
-          onClick={() => {
-            // IGNORE
-            console.log(
-              ignoreConstraint,
-              constraintData.filter(
-                (x) => !find(ignoreConstraint, { id: x.obs_id })
-              )
-            );
-            setDialogIsOpen(false);
-            setConstraintData(constraintData.filter(x=>x));
-            console.log('after', constraintData);
-            setIgnoreConstraint([]);
-          }}
-        >
-          Apply
-        </Button>
+        <div style={{ marginBottom: 0 }}>
+          <Button
+            onClick={() => {
+              setDialogIsOpen(false);
+              setIgnoreConstraint([]);
+            }}
+          >
+            Close
+          </Button>
+          <Button
+            onClick={() => {
+              setDialogIsOpen(false);
+              setResultData(
+                resultData.filter(
+                  (x) => !find(ignoreConstraint, (y) => y.obs_id === x.obs_id)
+                )
+              );
+
+              setIgnoreConstraint([]);
+            }}
+          >
+            Apply
+          </Button>
+        </div>
       </Dialog>
       <DynamicPage
         headerContent={
@@ -333,7 +398,7 @@ const ConformanceCheckingSection = () => {
         }
         style={{
           height: '2000px',
-          width: '1440px',
+          width: '2000px',
         }}
       >
         <Title>Upload</Title>
@@ -345,11 +410,11 @@ const ConformanceCheckingSection = () => {
         </FileUploader>
         <div style={{ margin: 100 }} />
         <Title>Input</Title>
-        {/* {constraintData ? (
+        {constraintData ? (
           <AnalyticalTable
             markNavigatedRow={markNavigatedRow}
             groupable
-            scaleWidthMode="Grow"
+            scaleWidthMode="Smart"
             selectionMode="MultiSelect"
             onRowSelect={(e) => onRowSelect(e)}
             filterable
@@ -412,7 +477,7 @@ const ConformanceCheckingSection = () => {
               },
               {
                 Cell: (instance) => {
-                  const { cell, row, webComponentsReactProperties } = instance;
+                  const { row, webComponentsReactProperties } = instance;
                   // disable buttons if overlay is active to prevent focus
                   const isOverlay = webComponentsReactProperties.showOverlay;
                   // console.log('This is your row data', row.original);
@@ -420,13 +485,6 @@ const ConformanceCheckingSection = () => {
                     const rows = row.original
                       ? [row.original]
                       : row.leafRows.map((x) => x.original);
-                    console.log(
-                      'delete',
-                      cell,
-                      row.original,
-                      rows,
-                      without(constraintData, ...rows)
-                    );
 
                     setConstraintData(without(constraintData, ...rows));
                   };
@@ -438,6 +496,7 @@ const ConformanceCheckingSection = () => {
                     />
                   );
                 },
+                width: 50,
                 Header: '',
                 accessor: '.',
                 disableFilters: true,
@@ -449,7 +508,7 @@ const ConformanceCheckingSection = () => {
             ]}
             data={constraintData}
           />
-        ) : null} */}
+        ) : null}
         <Button icon="delete" onClick={deleteSelected}>
           Delete Selected
         </Button>
@@ -458,7 +517,7 @@ const ConformanceCheckingSection = () => {
         {resultData ? (
           <AnalyticalTable
             groupable
-            scaleWidthMode="Grow"
+            scaleWidthMode="Smart"
             filterable
             visibleRows="10"
             columns={[
@@ -529,6 +588,36 @@ const ConformanceCheckingSection = () => {
                 accessor: 'num_violations',
                 headerTooltip: 'num_violations',
               },
+              {
+                Cell: (instance) => {
+                  const { row, webComponentsReactProperties } = instance;
+                  // disable buttons if overlay is active to prevent focus
+                  const isOverlay = webComponentsReactProperties.showOverlay;
+                  // console.log('This is your row data', row.original);
+                  const onDelete = () => {
+                    const rows = row.original
+                      ? [row.original]
+                      : row.leafRows.map((x) => x.original);
+
+                    setResultData(without(resultData, ...rows));
+                  };
+                  return (
+                    <Button
+                      icon="delete"
+                      disabled={isOverlay}
+                      onClick={onDelete}
+                    />
+                  );
+                },
+                width: 50,
+                Header: '',
+                accessor: '.',
+                disableFilters: true,
+                disableGroupBy: true,
+                disableResizing: true,
+                disableSortBy: true,
+                id: 'actions',
+              },
             ]}
             data={resultData}
           />
@@ -541,7 +630,6 @@ const ConformanceCheckingSection = () => {
         <EchartsComponent
           onEvents={{
             contextmenu: ({ data, event }) => {
-              console.log(data, event);
               event.event.preventDefault();
               setRightClickInfo({
                 name: data.name,
@@ -557,6 +645,83 @@ const ConformanceCheckingSection = () => {
           option={sunburstData ? sunburstData : []}
           lazyUpdate
           notMerge
+        />
+        <Title>Sankey</Title>
+        <Plot
+          onClick={({ points }) => {
+            console.log(points);
+            setRightClickInfo({
+              name: points[0].label,
+              reason: tail(points[0].customdata.split('<br>'))
+                .filter((x) => !isEmpty(x))
+                .map((x) => ({
+                  reason: x,
+                  obs_id: find(
+                    find(faultyEvents, { faultyEvent: points[0].label })
+                      ?.reason,
+                    { reason: x }
+                  )?.obs_id,
+                })),
+            });
+            setDialogIsOpen(true);
+          }}
+          data={[
+            {
+              type: 'sankey',
+              orientation: 'h',
+              arrangement: 'fixed',
+              node: {
+                pad: 15,
+                thickness: 30,
+                line: {
+                  color: 'black',
+                  width: 0.5,
+                },
+                customdata: data.map((x) => {
+                  const a = find(uniqBy(faultyEvents, 'faultyEvent'), {
+                    faultyEvent: x.name,
+                  });
+                  if (!isNil(a)) {
+                    return (
+                      x.name +
+                      '<br>' +
+                      a.reason?.map((x) => x.reason).join('<br>') +
+                      '<br>'
+                    );
+                  }
+                  return x.name + '<br>';
+                }),
+                metadata: data,
+                hovertemplate:
+                  '%{customdata} <b></b>occurred: %{value} times<extra></extra>',
+                label: data.map((x) => x.name),
+                color: data.map((x) => {
+                  const a = find(uniqBy(faultyEvents, 'faultyEvent'), {
+                    faultyEvent: x.name,
+                  });
+                  if (!isNil(a)) {
+                    return a.level === 'faulty' ? 'red' : 'yellow';
+                  }
+                  return 'green';
+                }),
+              },
+
+              link: {
+                source,
+                target,
+                value,
+              },
+            },
+          ]}
+          layout={{
+            width: 1200,
+            height: 800,
+            title: 'Sankey Plot of Events',
+            tooltip: {
+              // Edit the tooltip here
+              text: 'Tooltip title',
+            },
+          }}
         />
       </DynamicPage>
     </>
