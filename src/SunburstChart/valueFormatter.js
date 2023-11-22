@@ -1,4 +1,3 @@
-/* eslint-disable no-param-reassign */
 import { find } from 'lodash';
 
 export default ({ data, chartColors = [] }) => {

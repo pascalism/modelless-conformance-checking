@@ -2,8 +2,6 @@
 import { useEffect, useState, useCallback } from 'react';
 import {
   AnalyticalTable,
-  MultiComboBox,
-  MultiComboBoxItem,
   Button,
   DynamicPageHeader,
   DynamicPage,
@@ -11,97 +9,32 @@ import {
   Title,
   FlexBox,
   Label,
-  FileUploader,
-  Avatar,
-  Badge,
   Dialog,
 } from '@ui5/webcomponents-react';
-import EchartsComponent from 'echarts-for-react';
+import { Route, Routes, useNavigate } from 'react-router-dom';
 import '@ui5/webcomponents-icons/dist/AllIcons.js';
-import sunburstOptions from './calcCharOption';
 import {
-  CONSTRAINT_LEVELS,
   makeCompressedMapsExampleInput,
   makeCompressedMapsExampleOutput,
+  replaceAt,
+  findFaultyEvents,
+  deleteSelected,
 } from './util';
 // import { makeCompressedMapsExampleOutput } from './files/output_bpichallenge';
 import { without, isNil, isEmpty, find, indexOf, uniqBy, tail } from 'lodash';
-import valueFormatter from './valueFormatter';
-import Graph from './Graph';
 import data2 from './files/variant_array_short';
+import reduceToSankeyArray from './SankeyChart/reduceToSankeyArray';
 import Plot from 'react-plotly.js';
-
-const filterFn = (rows, accessor, filterValue) => {
-  if (filterValue.length > 0) {
-    return rows.filter((row) => {
-      const rowVal = row.values[accessor];
-      if (filterValue.some((item) => rowVal.includes(item))) {
-        return true;
-      }
-      return false;
-    });
-  }
-  return rows;
-};
-
-const replaceAt = (array = [], index, value) => {
-  const ret = [...array];
-  ret[index] = value;
-  return ret;
-};
+import ChartBar from './ChartBar';
+import sunburstOptions from './SunburstChart/calcCharOption';
+import valueFormatter from './SunburstChart/valueFormatter';
+import SunburstChart from './SunburstChart';
+import EventlogConfig from './EventlogConfig';
+import ViolatedConstraintsTable from './ViolatedConstraintsTable';
 
 const ConformanceCheckingSection = () => {
-  function reduceToSankeyArray(inputData) {
-    const data = [];
-    const links = [];
+  const navigate = useNavigate();
 
-    inputData.map((entry, index) => {
-      const eventCount = entry[entry.length - 1];
-      const nodes = entry.slice(0, -1); // Exclude the last element (count)
-
-      for (let i = 0; i < nodes.length - 1; i++) {
-        const sourceNode = nodes[i];
-        const targetNode = nodes[i + 1];
-
-        if (!data.find((x) => x.name === sourceNode + index + i)) {
-          data.push({ name: sourceNode });
-        }
-
-        if (!data.find((x) => x.name === targetNode + index + i)) {
-          data.push({ name: targetNode });
-        }
-
-        const existingLink = links.find(
-          (x) => x.source === sourceNode && x.target === targetNode
-        );
-
-        if (existingLink) {
-          existingLink.value += eventCount;
-        } else {
-          links.push({
-            source: sourceNode,
-            target: targetNode,
-            value: eventCount,
-          });
-        }
-      }
-    });
-    // Consolidate links with the same source and target nodes
-    const consolidatedLinks = [];
-    links.forEach((link) => {
-      const existingConsolidatedLink = consolidatedLinks.find(
-        (x) => x.source === link.source && x.target === link.target
-      );
-
-      if (existingConsolidatedLink) {
-        existingConsolidatedLink.value += link.value;
-      } else {
-        consolidatedLinks.push({ ...link });
-      }
-    });
-
-    return { data: uniqBy(data, 'name'), links: consolidatedLinks };
-  }
   const { data, links } = reduceToSankeyArray(data2);
 
   const { source, target, value } = links
@@ -131,11 +64,12 @@ const ConformanceCheckingSection = () => {
   const [constraintData, setConstraintData] = useState();
   const [resultData, setResultData] = useState();
 
-  const [selectedRows, setSelectedRows] = useState([]);
+  const [selectedInputRows, setSelectedInputRows] = useState([]);
+  const [selectedOutputRows, setSelectedOutputRows] = useState([]);
   const [sunburstData, setSunburstData] = useState();
   const [faultyEvents, setFaultyEvents] = useState([]);
 
-  const onRowSelect = (e) => {
+  const onRowSelect = (e, setSelectedRows) => {
     const rows = e.detail.selectedFlatRows.map((x) => x.original);
     setSelectedRows(rows);
   };
@@ -165,39 +99,6 @@ const ConformanceCheckingSection = () => {
       )
     );
   }, []);
-
-  const findFaultyEvents = (event, faultyEventsArray) => {
-    return faultyEventsArray.reduce((acc, current) => {
-      // actually contained
-      if (current.eventName === event) {
-        return [
-          ...acc,
-          {
-            faultyEvent: event,
-            reason: current.reason,
-            level: 'faulty',
-          },
-        ];
-      }
-      // partly contained
-      const partlyContainedEvents = event
-        .split(' ')
-        ?.reduce((acc, currentEventNameSplit) => {
-          if (current.eventName === currentEventNameSplit) {
-            return [
-              ...acc,
-              {
-                faultyEvent: event,
-                reason: current.reason,
-                level: 'partlyFaulty',
-              },
-            ];
-          }
-          return acc;
-        }, []);
-      return [...acc, ...partlyContainedEvents];
-    }, []);
-  };
 
   useEffect(() => {
     if (!isNil(resultData)) {
@@ -271,20 +172,24 @@ const ConformanceCheckingSection = () => {
     }
   }, [resultData]);
 
-  const markNavigatedRow = useCallback(
+  const markNavigatedInputRow = useCallback(
     (row) => {
-      return selectedRows?.find((x) => x.id === row.id);
+      return selectedInputRows?.find((x) => x.id === row.id);
     },
-    [selectedRows]
+    [selectedInputRows]
   );
 
-  const deleteSelected = () =>
-    setConstraintData(without(constraintData, ...selectedRows));
+  const markNavigatedOutputRow = useCallback(
+    (row) => {
+      return selectedOutputRows?.find((x) => x.id === row.id);
+    },
+    [selectedOutputRows]
+  );
 
   const [ignoreConstraint, setIgnoreConstraint] = useState([]);
 
   return (
-    <>
+    <div style={{ height: '100%', width: '100%', margin: 0, padding: 0 }}>
       <Dialog
         open={dialogIsOpen}
         onAfterClose={() => setDialogIsOpen(false)}
@@ -369,7 +274,7 @@ const ConformanceCheckingSection = () => {
           <DynamicPageHeader>
             <FlexBox wrap="Wrap">
               <FlexBox direction="Column">
-                <Label>WIP</Label>
+                <Label>(a SAP Signavio Evaluation)</Label>
               </FlexBox>
               <span style={{ width: '1rem' }} />
             </FlexBox>
@@ -379,352 +284,182 @@ const ConformanceCheckingSection = () => {
           <DynamicPageTitle
             actions={
               <>
-                <Button design="Emphasized">Edit</Button>
-                <Button design="Transparent">Delete</Button>
-                <Button design="Transparent">Copy</Button>
-                <Button design="Transparent" icon="action" />
+                <Button onClick={() => navigate('/')} design="Emphasized">
+                  Configure Eventlog
+                </Button>
               </>
             }
-            header={<Title>Modelless Conformance Checking</Title>}
-            navigationActions={
-              <>
-                <Button design="Transparent" icon="full-screen" />
-                <Button design="Transparent" icon="exit-full-screen" />
-                <Button design="Transparent" icon="decline" />
-              </>
+            header={<Title>VISCOSE</Title>}
+            subHeader={
+              <Label>Visualization of declarative Conformance Checking</Label>
             }
-            subHeader={<Label>Prototype</Label>}
           ></DynamicPageTitle>
         }
-        style={{
-          height: '2000px',
-          width: '2000px',
-        }}
       >
-        <Title>Upload</Title>
-        <FileUploader hideInput>
-          <Avatar icon="upload" />
-        </FileUploader>
-        <FileUploader hideInput>
-          <Badge>{'Upload file'}</Badge>
-        </FileUploader>
-        <div style={{ margin: 100 }} />
-        <Title>Input</Title>
-        {constraintData ? (
-          <AnalyticalTable
-            markNavigatedRow={markNavigatedRow}
-            groupable
-            scaleWidthMode="Smart"
-            selectionMode="MultiSelect"
-            onRowSelect={(e) => onRowSelect(e)}
-            filterable
-            columns={[
-              {
-                Header: () => <span>Level</span>,
-                selectionMode: 'SingleSelect',
-                filter: filterFn,
-                accessor: 'Level',
-                headerTooltip: 'Level of the Constraint',
-                disableFilters: false,
-                disableGroupBy: false,
-                disableSortBy: false,
-                Filter: ({ column, popoverRef }) => {
-                  const handleChange = (event) => {
-                    column.setFilter(
-                      event.detail.items.map((item) =>
-                        item.getAttribute('text')
-                      )
-                    );
-                    popoverRef.current.close();
-                  };
-                  return (
-                    <MultiComboBox
-                      accessibleName="Constraint Level"
-                      label="Constraint Level"
-                      onSelectionChange={handleChange}
-                    >
-                      {CONSTRAINT_LEVELS.map(({ text, value }) => {
-                        const isSelected = column?.filterValue?.some(
-                          (filterVal) => filterVal.includes(value)
-                        );
-                        return (
-                          <MultiComboBoxItem
-                            text={text}
-                            key={value}
-                            selected={isSelected}
-                          />
-                        );
-                      })}
-                    </MultiComboBox>
-                  );
-                },
-              },
-              {
-                Header: 'Concerning Event',
-                accessor: 'left_op',
-                headerTooltip: 'left_op of the Constraint',
-              },
-              {
-                Header: 'Model Names',
-                accessor: 'model_name',
-                headerTooltip: 'model_id of the Constraint',
-              },
-              {
-                Header: 'Natural Language',
-                accessor: 'nat_lang_template',
-                headerTooltip: 'nat_lang_template',
-                width: 500,
-              },
-              {
-                Cell: (instance) => {
-                  const { row, webComponentsReactProperties } = instance;
-                  // disable buttons if overlay is active to prevent focus
-                  const isOverlay = webComponentsReactProperties.showOverlay;
-                  // console.log('This is your row data', row.original);
-                  const onDelete = () => {
-                    const rows = row.original
-                      ? [row.original]
-                      : row.leafRows.map((x) => x.original);
-
-                    setConstraintData(without(constraintData, ...rows));
-                  };
-                  return (
-                    <Button
-                      icon="delete"
-                      disabled={isOverlay}
-                      onClick={onDelete}
-                    />
-                  );
-                },
-                width: 50,
-                Header: '',
-                accessor: '.',
-                disableFilters: true,
-                disableGroupBy: true,
-                disableResizing: true,
-                disableSortBy: true,
-                id: 'actions',
-              },
-            ]}
-            data={constraintData}
+        <Routes>
+          <Route
+            path="/"
+            element={
+              <EventlogConfig
+                navigate={navigate}
+                constraintData={constraintData}
+                deleteSelected={deleteSelected}
+                markNavigatedOutputRow={markNavigatedOutputRow}
+                selectedInputRows={selectedInputRows}
+                setConstraintData={setConstraintData}
+                onRowSelect={onRowSelect}
+                setSelectedOutputRows={setSelectedOutputRows}
+                resultData={resultData}
+                setResultData={setResultData}
+                selectedOutputRows={selectedOutputRows}
+                markNavigatedInputRow={markNavigatedInputRow}
+                setSelectedInputRows={setSelectedInputRows}
+              />
+            }
           />
-        ) : null}
-        <Button icon="delete" onClick={deleteSelected}>
-          Delete Selected
-        </Button>
-        <div style={{ margin: 100 }} />
-        <Title>Output</Title>
-        {resultData ? (
-          <AnalyticalTable
-            groupable
-            scaleWidthMode="Smart"
-            filterable
-            visibleRows="10"
-            columns={[
-              {
-                Header: 'Relevance Score',
-                accessor: 'relevance_score',
-                headerTooltip: 'relevance_score',
-                disableGroupBy: true,
-              },
-              {
-                Header: () => <span>Level</span>,
-                selectionMode: 'SingleSelect',
-                filter: filterFn,
-                accessor: 'Level',
-                headerTooltip: 'Level of the Constraint',
-                disableFilters: false,
-                disableGroupBy: false,
-                disableSortBy: false,
-                Filter: ({ column, popoverRef }) => {
-                  const handleChange = (event) => {
-                    column.setFilter(
-                      event.detail.items.map((item) =>
-                        item.getAttribute('text')
-                      )
-                    );
-                    popoverRef.current.close();
-                  };
-                  return (
-                    <MultiComboBox
-                      accessibleName="Constraint Level"
-                      label="Constraint Level"
-                      onSelectionChange={handleChange}
-                    >
-                      {CONSTRAINT_LEVELS.map(({ text, value }) => {
-                        const isSelected = column?.filterValue?.some(
-                          (filterVal) => filterVal.includes(value)
-                        );
-                        return (
-                          <MultiComboBoxItem
-                            text={text}
-                            key={value}
-                            selected={isSelected}
-                          />
-                        );
-                      })}
-                    </MultiComboBox>
-                  );
-                },
-              },
-              {
-                Header: 'Concerning Event',
-                accessor: 'left_op',
-                headerTooltip: 'left_op of the Constraint',
-              },
-              {
-                Header: 'Natural Language',
-                accessor: 'nat_lang_template',
-                headerTooltip: 'nat_lang_template',
-                width: 500,
-              },
-              {
-                Header: 'Kind',
-                accessor: 'template',
-                headerTooltip: 'template',
-              },
-              {
-                Header: 'times this violation occurred',
-                accessor: 'num_violations',
-                headerTooltip: 'num_violations',
-              },
-              {
-                Cell: (instance) => {
-                  const { row, webComponentsReactProperties } = instance;
-                  // disable buttons if overlay is active to prevent focus
-                  const isOverlay = webComponentsReactProperties.showOverlay;
-                  // console.log('This is your row data', row.original);
-                  const onDelete = () => {
-                    const rows = row.original
-                      ? [row.original]
-                      : row.leafRows.map((x) => x.original);
-
-                    setResultData(without(resultData, ...rows));
-                  };
-                  return (
-                    <Button
-                      icon="delete"
-                      disabled={isOverlay}
-                      onClick={onDelete}
-                    />
-                  );
-                },
-                width: 50,
-                Header: '',
-                accessor: '.',
-                disableFilters: true,
-                disableGroupBy: true,
-                disableResizing: true,
-                disableSortBy: true,
-                id: 'actions',
-              },
-            ]}
-            data={resultData}
+          <Route
+            path="/table"
+            element={
+              <>
+                <ChartBar />
+                <div
+                  style={{
+                    height: '100%',
+                    display: 'flex',
+                    alignItems: 'center',
+                    flexDirection: 'row-reverse',
+                  }}
+                >
+                  <Button design="Transparent" icon="full-screen" />
+                </div>
+                {resultData ? (
+                  <ViolatedConstraintsTable
+                    onRowSelect={onRowSelect}
+                    deleteSelected={deleteSelected}
+                    markNavigatedOutputRow={markNavigatedOutputRow}
+                    setSelectedOutputRows={setSelectedOutputRows}
+                    setResultData={setResultData}
+                    resultData={resultData}
+                    selectedOutputRows={selectedOutputRows}
+                  />
+                ) : null}
+              </>
+            }
           />
-        ) : null}
-        <div style={{ margin: 100 }} />
-        {/* <Title>Graph</Title>
-        <Graph /> */}
-        <Title>Sunburst</Title>
+          <Route
+            path="/sunburst"
+            element={
+              <>
+                <ChartBar />
+                <SunburstChart
+                  sunburstData={sunburstData}
+                  setRightClickInfo={setRightClickInfo}
+                  setDialogIsOpen={setDialogIsOpen}
+                />
+              </>
+            }
+          />
+          <Route
+            path="/sankey"
+            element={
+              <>
+                <ChartBar />
+                <div
+                  style={{ display: 'flex', justifyContent: 'space-between' }}
+                >
+                  <Title>(select event on click)</Title>
+                  <Button design="Transparent" icon="full-screen" />
+                </div>
+                <Plot
+                  onClick={({ points }) => {
+                    if (isNil(points[0]?.customdata)) {
+                      return;
+                    }
+                    setRightClickInfo({
+                      name: points[0].label,
+                      reason: tail(points[0].customdata.split('<br>'))
+                        .filter((x) => !isEmpty(x))
+                        .map((x) => ({
+                          reason: x,
+                          obs_id: find(
+                            find(faultyEvents, { faultyEvent: points[0].label })
+                              ?.reason,
+                            { reason: x }
+                          )?.obs_id,
+                        })),
+                    });
+                    setDialogIsOpen(true);
+                  }}
+                  data={[
+                    {
+                      type: 'sankey',
+                      orientation: 'h',
+                      arrangement: 'fixed',
+                      node: {
+                        pad: 15,
+                        thickness: 30,
+                        line: {
+                          color: 'black',
+                          width: 0.5,
+                        },
+                        customdata: data.map((dataPoint) => {
+                          const faultyEvent = find(
+                            uniqBy(faultyEvents, 'faultyEvent'),
+                            {
+                              faultyEvent: dataPoint.name,
+                            }
+                          );
+                          if (!isNil(faultyEvent)) {
+                            return (
+                              dataPoint.name +
+                              '<br>' +
+                              faultyEvent.reason
+                                ?.map((dataPoint) => dataPoint.reason)
+                                .join('<br>') +
+                              '<br>'
+                            );
+                          }
+                          return dataPoint.name + '<br>';
+                        }),
+                        metadata: data,
+                        hovertemplate:
+                          '%{customdata}|Cluster <b></b>occurred: %{value} times<extra></extra>',
+                        label: data.map((x) => x.name),
+                        color: data.map((x) => {
+                          const a = find(uniqBy(faultyEvents, 'faultyEvent'), {
+                            faultyEvent: x.name,
+                          });
+                          if (!isNil(a)) {
+                            return a.level === 'faulty' ? 'red' : 'yellow';
+                          }
+                          return 'green';
+                        }),
+                      },
 
-        <EchartsComponent
-          onEvents={{
-            contextmenu: ({ data, event }) => {
-              event.event.preventDefault();
-              setRightClickInfo({
-                name: data.name,
-                reason: data.reason,
-              });
-              setDialogIsOpen(true);
-            },
-          }}
-          style={{
-            height: 1000,
-            width: 1000,
-          }}
-          option={sunburstData ? sunburstData : []}
-          lazyUpdate
-          notMerge
-        />
-        <Title>Sankey</Title>
-        <Plot
-          onClick={({ points }) => {
-            console.log(points);
-            setRightClickInfo({
-              name: points[0].label,
-              reason: tail(points[0].customdata.split('<br>'))
-                .filter((x) => !isEmpty(x))
-                .map((x) => ({
-                  reason: x,
-                  obs_id: find(
-                    find(faultyEvents, { faultyEvent: points[0].label })
-                      ?.reason,
-                    { reason: x }
-                  )?.obs_id,
-                })),
-            });
-            setDialogIsOpen(true);
-          }}
-          data={[
-            {
-              type: 'sankey',
-              orientation: 'h',
-              arrangement: 'fixed',
-              node: {
-                pad: 15,
-                thickness: 30,
-                line: {
-                  color: 'black',
-                  width: 0.5,
-                },
-                customdata: data.map((x) => {
-                  const a = find(uniqBy(faultyEvents, 'faultyEvent'), {
-                    faultyEvent: x.name,
-                  });
-                  if (!isNil(a)) {
-                    return (
-                      x.name +
-                      '<br>' +
-                      a.reason?.map((x) => x.reason).join('<br>') +
-                      '<br>'
-                    );
-                  }
-                  return x.name + '<br>';
-                }),
-                metadata: data,
-                hovertemplate:
-                  '%{customdata} <b></b>occurred: %{value} times<extra></extra>',
-                label: data.map((x) => x.name),
-                color: data.map((x) => {
-                  const a = find(uniqBy(faultyEvents, 'faultyEvent'), {
-                    faultyEvent: x.name,
-                  });
-                  if (!isNil(a)) {
-                    return a.level === 'faulty' ? 'red' : 'yellow';
-                  }
-                  return 'green';
-                }),
-              },
-
-              link: {
-                source,
-                target,
-                value,
-              },
-            },
-          ]}
-          layout={{
-            width: 1200,
-            height: 800,
-            title: 'Sankey Plot of Events',
-            tooltip: {
-              // Edit the tooltip here
-              text: 'Tooltip title',
-            },
-          }}
-        />
+                      link: {
+                        source,
+                        target,
+                        value,
+                      },
+                    },
+                  ]}
+                  layout={{
+                    width: 1200,
+                    height: 800,
+                    title: 'Sankey Plot of Events',
+                    tooltip: {
+                      // Edit the tooltip here
+                      text: 'Tooltip title',
+                    },
+                  }}
+                />
+                <br />
+              </>
+            }
+          />
+        </Routes>
       </DynamicPage>
-    </>
+    </div>
   );
 };
 

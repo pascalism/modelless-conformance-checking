@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import csvToJson from 'csvtojson';
+import { without } from 'lodash';
 
 export const CONSTRAINT_LEVELS = [
   // { text: "Activity", value: "Activity" },
@@ -8,6 +9,64 @@ export const CONSTRAINT_LEVELS = [
   { text: 'Multi Object', value: 'Multi-object' },
   { text: 'Resource', value: 'Resource' },
 ];
+
+export const deleteSelected = (
+  constraintData,
+  selectedInputRows,
+  setConstraintData
+) => setConstraintData(without(constraintData, ...selectedInputRows));
+
+export const findFaultyEvents = (event, faultyEventsArray) => {
+  return faultyEventsArray.reduce((acc, current) => {
+    // actually contained
+    if (current.eventName === event) {
+      return [
+        ...acc,
+        {
+          faultyEvent: event,
+          reason: current.reason,
+          level: 'faulty',
+        },
+      ];
+    }
+    // partly contained
+    const partlyContainedEvents = event
+      .split(' ')
+      ?.reduce((acc, currentEventNameSplit) => {
+        if (current.eventName === currentEventNameSplit) {
+          return [
+            ...acc,
+            {
+              faultyEvent: event,
+              reason: current.reason,
+              level: 'partlyFaulty',
+            },
+          ];
+        }
+        return acc;
+      }, []);
+    return [...acc, ...partlyContainedEvents];
+  }, []);
+};
+
+export const filterFn = (rows, accessor, filterValue) => {
+  if (filterValue.length > 0) {
+    return rows.filter((row) => {
+      const rowVal = row.values[accessor];
+      if (filterValue.some((item) => rowVal.includes(item))) {
+        return true;
+      }
+      return false;
+    });
+  }
+  return rows;
+};
+
+export const replaceAt = (array = [], index, value) => {
+  const ret = [...array];
+  ret[index] = value;
+  return ret;
+};
 
 export const makeCompressedMapsExampleInput = () =>
   csvToJson({ delimiter: ';' })
@@ -53,3 +112,6 @@ export const useDetectOutsideClick = (el, initialState, capture = false) => {
 
   return [isActive, setIsActive];
 };
+
+export const objectMap = (obj, fn) =>
+  Object.fromEntries(Object.entries(obj).map(([k, v], i) => [k, fn(v, k, i)]));

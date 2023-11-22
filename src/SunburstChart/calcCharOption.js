@@ -20,6 +20,10 @@ const tooltip =
 
 export default ({ data = [], noAnimation, setRightClickInfo }) => ({
   animation: !noAnimation,
+  legend: {
+    data: ['conformant'],
+    left: 10,
+  },
   tooltip: {
     show: true,
     confine: true,
