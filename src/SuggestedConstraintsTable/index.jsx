@@ -29,6 +29,13 @@ const SuggestedConstraintsTable = ({
         filterable
         columns={[
           {
+            Header: 'Relevance Score',
+            accessor: 'relevance_score',
+            headerTooltip: 'relevance_score',
+            disableGroupBy: true,
+            defaultCanSort: true,
+          },
+          {
             Header: () => <span>Level</span>,
             selectionMode: 'SingleSelect',
             filter: filterFn,
