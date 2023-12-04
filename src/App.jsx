@@ -13,18 +13,15 @@ import {
 } from '@ui5/webcomponents-react';
 import { Route, Routes, useNavigate } from 'react-router-dom';
 import '@ui5/webcomponents-icons/dist/AllIcons.js';
-import {
-  makeCompressedMapsExampleInput,
-  makeCompressedMapsExampleOutput,
-  replaceAt,
-  findFaultyEvents,
-  deleteSelected,
-} from './util';
-// import { makeCompressedMapsExampleOutput } from './files/output_bpichallenge';
 import { without, isNil, isEmpty, find, indexOf, uniqBy, tail } from 'lodash';
-import data2 from './files/variant_array_short';
 import reduceToSankeyArray from './SankeyChart/reduceToSankeyArray';
 import Plot from 'react-plotly.js';
+import { deleteSelected, fetchData, colors } from './util';
+import {
+  findFaultyEventFromFaultyEventsArray,
+  reduceFaultyEventsArray,
+} from './findFaultyEvents';
+import data2 from './files/variant_array_bpichallenge';
 import ChartBar from './ChartBar';
 import sunburstOptions from './SunburstChart/calcCharOption';
 import valueFormatter from './SunburstChart/valueFormatter';
@@ -34,6 +31,17 @@ import ViolatedConstraintsTable from './ViolatedConstraintsTable';
 
 const ConformanceCheckingSection = () => {
   const navigate = useNavigate();
+
+  const [csvRecommendationData, setCsvRecommendationData] = useState([]);
+  const [csvResultData, setCsvResultData] = useState([]);
+
+  useEffect(() => {
+    fetchData(setCsvResultData, 'src/files/BPI_Challenge_2019-3-w-after.csv');
+    fetchData(
+      setCsvRecommendationData,
+      'src/files/BPI_Challenge_2019-3-w-after.csv'
+    );
+  }, []);
 
   const { data, links } = reduceToSankeyArray(data2);
 
@@ -75,20 +83,21 @@ const ConformanceCheckingSection = () => {
   };
 
   useEffect(() => {
-    makeCompressedMapsExampleInput().then((result) =>
-      setConstraintData(
-        result.map((row) => ({
+    setConstraintData(
+      csvRecommendationData
+        .map((row) => ({
           ...row,
           nat_lang_template: row.nat_lang_template
-            .replaceAll('{1}', `"${row.left_op}"`)
+            ?.replaceAll('{1}', `"${row.left_op}"`)
             .replaceAll('{2}', `"${row.right_op}"`)
             .replaceAll('{n}', row.constraint_string?.split('[')[0]?.slice(-1)),
         }))
-      )
+        .sort((a, b) => b.relevance_score - a.relevance_score)
     );
-    makeCompressedMapsExampleOutput().then((result) =>
-      setResultData(
-        result.map((row) => ({
+
+    setResultData(
+      csvResultData
+        .map((row) => ({
           ...row,
           subRows: row.model_name?.split('|').map((x) => ({ model: x })),
           nat_lang_template: row.nat_lang_template
@@ -96,49 +105,14 @@ const ConformanceCheckingSection = () => {
             .replaceAll('{2}', `"${row.right_op}"`)
             .replaceAll('{n}', row.constraint_string?.split('[')[0]?.slice(-1)),
         }))
-      )
+        .sort((a, b) => b.relevance_score - a.relevance_score)
     );
-  }, []);
+  }, [csvResultData, csvRecommendationData]);
 
   useEffect(() => {
     if (!isNil(resultData)) {
       const faultyEventsArray = [
-        ...new Set(
-          resultData.reduce((acc, currentRow) => {
-            const a = find(acc, { eventName: currentRow.left_op });
-            if (!isNil(a)) {
-              return replaceAt(acc, indexOf(acc, a), {
-                eventName: currentRow.left_op,
-                reason: !isNil(a)
-                  ? [
-                      ...a.reason,
-                      {
-                        reason: currentRow.nat_lang_template,
-                        obs_id: currentRow.obs_id,
-                      },
-                    ]
-                  : [
-                      {
-                        reason: currentRow.nat_lang_template,
-                        obs_id: currentRow.obs_id,
-                      },
-                    ],
-              });
-            }
-            return [
-              ...acc,
-              {
-                eventName: currentRow.left_op,
-                reason: [
-                  {
-                    reason: currentRow.nat_lang_template,
-                    obs_id: currentRow.obs_id,
-                  },
-                ],
-              },
-            ];
-          }, [])
-        ),
+        ...new Set(resultData.reduce(reduceFaultyEventsArray, [])),
       ];
 
       const enhancedRows = data2.map((currentRow) => {
@@ -146,7 +120,9 @@ const ConformanceCheckingSection = () => {
         // here we need a magic function that returns all relevant events
         // faulty = includesEvent | includes part of a faulty event name | not faulty
         const faultyEventsFromVariant = events
-          .map((event) => findFaultyEvents(event, faultyEventsArray))
+          .map((event) =>
+            findFaultyEventFromFaultyEventsArray(event, faultyEventsArray)
+          )
           .flat();
 
         const measure = currentRow[currentRow.length - 1];
@@ -365,9 +341,29 @@ const ConformanceCheckingSection = () => {
               <>
                 <ChartBar />
                 <div
-                  style={{ display: 'flex', justifyContent: 'space-between' }}
+                  style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    marginBottom: 20,
+                  }}
                 >
-                  <Title>(select event on click)</Title>
+                  <Title style={{ width: 300 }}>(select event on click)</Title>
+                  {colors.map(({ color, text }) => (
+                    <span
+                      key={color}
+                      style={{
+                        padding: 8,
+                        backgroundColor: color,
+                        width: '200px',
+                        height: '50px',
+                        display: 'inline-block',
+                        color: 'black',
+                        textAlign: 'center',
+                      }}
+                    >
+                      {text}
+                    </span>
+                  ))}
                   <Button design="Transparent" icon="full-screen" />
                 </div>
                 <Plot
@@ -423,14 +419,14 @@ const ConformanceCheckingSection = () => {
                         }),
                         metadata: data,
                         hovertemplate:
-                          '%{customdata}|Cluster <b></b>occurred: %{value} times<extra></extra>',
+                          'occurred: %{value} times %{customdata} <b></b><extra></extra>',
                         label: data.map((x) => x.name),
                         color: data.map((x) => {
                           const a = find(uniqBy(faultyEvents, 'faultyEvent'), {
                             faultyEvent: x.name,
                           });
                           if (!isNil(a)) {
-                            return a.level === 'faulty' ? 'red' : 'yellow';
+                            return a.level === 'faulty' ? 'red' : 'orange';
                           }
                           return 'green';
                         }),
