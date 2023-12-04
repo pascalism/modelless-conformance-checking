@@ -5,7 +5,7 @@ import {
   Button,
 } from '@ui5/webcomponents-react';
 import { CONSTRAINT_LEVELS, filterFn } from '../util';
-import { without } from 'lodash';
+import { without, isNil } from 'lodash';
 
 const ViolatedConstraintsTable = ({
   onRowSelect,
@@ -16,7 +16,7 @@ const ViolatedConstraintsTable = ({
   resultData,
   selectedOutputRows,
 }) => {
-  return (
+  return !isNil(resultData) ? (
     <>
       <AnalyticalTable
         minRows={9}
@@ -34,6 +34,7 @@ const ViolatedConstraintsTable = ({
             accessor: 'relevance_score',
             headerTooltip: 'relevance_score',
             disableGroupBy: true,
+            defaultCanSort: true,
           },
           {
             Header: () => <span>Level</span>,
@@ -132,6 +133,6 @@ const ViolatedConstraintsTable = ({
         Delete Selected
       </Button>
     </>
-  );
+  ) : null;
 };
 export default ViolatedConstraintsTable;
