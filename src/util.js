@@ -1,6 +1,14 @@
 import { useState, useEffect } from 'react';
 import csvToJson from 'csvtojson';
 import { without } from 'lodash';
+import Papa from 'papaparse';
+
+export const colors = [
+  { color: 'green', text: 'event is part of conformant variant' },
+  { color: 'yellow', text: 'event is part of non-conformant variant' },
+  { color: 'orange', text: 'event is likely non-conformant' },
+  { color: 'red', text: 'event is nconformant' },
+];
 
 export const CONSTRAINT_LEVELS = [
   // { text: "Activity", value: "Activity" },
@@ -15,39 +23,6 @@ export const deleteSelected = (
   selectedInputRows,
   setConstraintData
 ) => setConstraintData(without(constraintData, ...selectedInputRows));
-
-export const findFaultyEvents = (event, faultyEventsArray) => {
-  return faultyEventsArray.reduce((acc, current) => {
-    // actually contained
-    if (current.eventName === event) {
-      return [
-        ...acc,
-        {
-          faultyEvent: event,
-          reason: current.reason,
-          level: 'faulty',
-        },
-      ];
-    }
-    // partly contained
-    const partlyContainedEvents = event
-      .split(' ')
-      ?.reduce((acc, currentEventNameSplit) => {
-        if (current.eventName === currentEventNameSplit) {
-          return [
-            ...acc,
-            {
-              faultyEvent: event,
-              reason: current.reason,
-              level: 'partlyFaulty',
-            },
-          ];
-        }
-        return acc;
-      }, []);
-    return [...acc, ...partlyContainedEvents];
-  }, []);
-};
 
 export const filterFn = (rows, accessor, filterValue) => {
   if (filterValue.length > 0) {
@@ -66,6 +41,18 @@ export const replaceAt = (array = [], index, value) => {
   const ret = [...array];
   ret[index] = value;
   return ret;
+};
+
+export const fetchData = async (setState, path) => {
+  const response = await fetch(path);
+  const reader = response.body.getReader();
+  const result = await reader.read();
+  const decoder = new TextDecoder('utf-8');
+  const csvString = decoder.decode(result.value);
+  // Use PapaParse to parse the CSV string into an array
+  const parsedCsv = Papa.parse(csvString, { header: true });
+  console.log(parsedCsv);
+  setState(parsedCsv.data);
 };
 
 export const makeCompressedMapsExampleInput = () =>
