@@ -1,34 +1,31 @@
 import { Button, Title } from '@ui5/webcomponents-react';
+import { colors } from '../util';
 import EchartsComponent from 'echarts-for-react';
 
-const SunburstChart = ({
-  sunburstData,
-  setRightClickInfo,
-  setDialogIsOpen,
-}) => {
-  const colors = ['green', 'yellow', 'orange', 'red'];
-  return (
+const SunburstChart = ({ sunburstData, setRightClickInfo, setDialogIsOpen }) =>
+  sunburstData ? (
     <>
       <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-        <Title>(select event on right-click)</Title>
+        <Title style={{ width: 300 }}>(select event on right-click)</Title>
+        {colors.map(({ color, text }) => (
+          <span
+            key={color}
+            style={{
+              padding: 8,
+              backgroundColor: color,
+              width: '200px',
+              height: '50px',
+              display: 'inline-block',
+              color: 'black',
+              textAlign: 'center',
+            }}
+          >
+            {text}
+          </span>
+        ))}
         <Button design="Transparent" icon="full-screen" />
       </div>
-      <ul>
-        {colors.map((color, index) => (
-          <li key={index}>
-            <span
-              style={{
-                backgroundColor: color,
-                width: '20px',
-                height: '20px',
-                display: 'inline-block',
-                marginRight: '5px',
-              }}
-            />
-            {color.charAt(0).toUpperCase() + color.slice(1)}
-          </li>
-        ))}
-      </ul>
+
       <EchartsComponent
         onEvents={{
           contextmenu: ({ data, event }) => {
@@ -49,7 +46,6 @@ const SunburstChart = ({
         notMerge
       />
     </>
-  );
-};
+  ) : null;
 
 export default SunburstChart;
