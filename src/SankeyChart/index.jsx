@@ -139,7 +139,7 @@ const SankeyChart = ({
               }),
               metadata: data,
               hovertemplate:
-                '%{customdata}|Cluster <b></b>occurred: %{value} times<extra></extra>',
+                '%{customdata} <b></b>occurred: %{value} times<extra></extra>',
               label: data.map((x) => x.name),
               color: data.map((x) => {
                 const a = find(uniqBy(faultyEvents, 'faultyEvent'), {
