@@ -1,21 +1,34 @@
 import { useState, useEffect } from 'react';
 import csvToJson from 'csvtojson';
-import { without } from 'lodash';
+import { without, isNil } from 'lodash';
 import Papa from 'papaparse';
 
 export const colors = [
   { color: 'green', text: 'event is part of conformant variant' },
   { color: 'yellow', text: 'event is part of non-conformant variant' },
   { color: 'orange', text: 'event is likely non-conformant' },
-  { color: 'red', text: 'event is nconformant' },
+  { color: 'red', text: 'event is nonconformant' },
 ];
 
+export const findLabel = (row, leftOrRight) =>
+  !isNil(row[`log_label_${leftOrRight}`]) &&
+  !isNil(JSON.parse(row[`log_label_${leftOrRight}`]?.replace(/'/g, '"'))[0])
+    ? JSON.parse(row[`log_label_${leftOrRight}`]?.replace(/'/g, '"'))[0]
+    : row[`${leftOrRight}_op`];
+
 export const CONSTRAINT_LEVELS = [
-  // { text: "Activity", value: "Activity" },
   { text: 'Activity', value: 'Activity' },
   { text: 'Object', value: 'Object' },
-  { text: 'Multi Object', value: 'Multi-object' },
+  { text: 'Multi-object', value: 'Multi-object' },
   { text: 'Resource', value: 'Resource' },
+];
+
+export const RELEVANCE_LEVELS = [
+  { text: '>0.5', value: '0.5' },
+  { text: '>0.6', value: '0.6' },
+  { text: '>0.7', value: '0.7' },
+  { text: '>0.8', value: '0.8' },
+  { text: '>0.9', value: '0.9' },
 ];
 
 export const deleteSelected = (
@@ -28,7 +41,7 @@ export const filterFn = (rows, accessor, filterValue) => {
   if (filterValue.length > 0) {
     return rows.filter((row) => {
       const rowVal = row.values[accessor];
-      if (filterValue.some((item) => rowVal.includes(item))) {
+      if (filterValue.some((item) => rowVal?.includes(item))) {
         return true;
       }
       return false;
@@ -51,7 +64,6 @@ export const fetchData = async (setState, path) => {
   const csvString = decoder.decode(result.value);
   // Use PapaParse to parse the CSV string into an array
   const parsedCsv = Papa.parse(csvString, { header: true });
-  console.log(parsedCsv);
   setState(parsedCsv.data);
 };
 

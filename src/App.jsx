@@ -16,18 +16,19 @@ import '@ui5/webcomponents-icons/dist/AllIcons.js';
 import { without, isNil, isEmpty, find, indexOf, uniqBy, tail } from 'lodash';
 import reduceToSankeyArray from './SankeyChart/reduceToSankeyArray';
 import Plot from 'react-plotly.js';
-import { deleteSelected, fetchData, colors } from './util';
+import { deleteSelected, fetchData, colors, findLabel } from './util';
 import {
   findFaultyEventFromFaultyEventsArray,
   reduceFaultyEventsArray,
 } from './findFaultyEvents';
-import data2 from './files/variant_array_bpichallenge';
+import data2 from './files/variant_array_short';
 import ChartBar from './ChartBar';
 import sunburstOptions from './SunburstChart/calcCharOption';
 import valueFormatter from './SunburstChart/valueFormatter';
 import SunburstChart from './SunburstChart';
 import EventlogConfig from './EventlogConfig';
 import ViolatedConstraintsTable from './ViolatedConstraintsTable';
+import EventVariantsDisplay from './EventVariantsDisplay';
 
 const ConformanceCheckingSection = () => {
   const navigate = useNavigate();
@@ -36,10 +37,13 @@ const ConformanceCheckingSection = () => {
   const [csvResultData, setCsvResultData] = useState([]);
 
   useEffect(() => {
-    fetchData(setCsvResultData, 'src/files/BPI_Challenge_2019-3-w-after.csv');
     fetchData(
       setCsvRecommendationData,
-      'src/files/BPI_Challenge_2019-3-w-after.csv'
+      'src/files/runningexample.xes-recommended_constraintsv_newcolumn.csv'
+    );
+    fetchData(
+      setCsvResultData,
+      'src/files/runningexample.xes-violations_newcolumn.csv'
     );
   }, []);
 
@@ -71,11 +75,13 @@ const ConformanceCheckingSection = () => {
 
   const [constraintData, setConstraintData] = useState();
   const [resultData, setResultData] = useState();
+  const [originalResultData, setOriginalResultData] = useState([]);
 
   const [selectedInputRows, setSelectedInputRows] = useState([]);
   const [selectedOutputRows, setSelectedOutputRows] = useState([]);
   const [sunburstData, setSunburstData] = useState();
   const [faultyEvents, setFaultyEvents] = useState([]);
+  const [faultyVariants, setFaultyVariants] = useState([]);
 
   const onRowSelect = (e, setSelectedRows) => {
     const rows = e.detail.selectedFlatRows.map((x) => x.original);
@@ -88,25 +94,28 @@ const ConformanceCheckingSection = () => {
         .map((row) => ({
           ...row,
           nat_lang_template: row.nat_lang_template
-            ?.replaceAll('{1}', `"${row.left_op}"`)
-            .replaceAll('{2}', `"${row.right_op}"`)
+            ?.replaceAll('{1}', `"${findLabel(row, 'left')}"`)
+            .replaceAll('{2}', `"${findLabel(row, 'right')}"`)
             .replaceAll('{n}', row.constraint_string?.split('[')[0]?.slice(-1)),
         }))
         .sort((a, b) => b.relevance_score - a.relevance_score)
     );
 
-    setResultData(
-      csvResultData
-        .map((row) => ({
-          ...row,
-          subRows: row.model_name?.split('|').map((x) => ({ model: x })),
-          nat_lang_template: row.nat_lang_template
-            ?.replaceAll('{1}', `"${row.left_op}"`)
-            .replaceAll('{2}', `"${row.right_op}"`)
-            .replaceAll('{n}', row.constraint_string?.split('[')[0]?.slice(-1)),
-        }))
-        .sort((a, b) => b.relevance_score - a.relevance_score)
-    );
+    const resultData = csvResultData
+      .map((row) => ({
+        ...row,
+        left_op: findLabel(row, 'left'),
+        right_op: findLabel(row, 'right'),
+        subRows: row.model_name?.split('|').map((x) => ({ model: x })),
+        nat_lang_template: row.nat_lang_template
+          ?.replaceAll('{1}', `"${findLabel(row, 'left')}"`)
+          .replaceAll('{2}', `"${findLabel(row, 'right')}"`)
+          .replaceAll('{n}', row.constraint_string?.split('[')[0]?.slice(-1)),
+      }))
+      .sort((a, b) => b.relevance_score - a.relevance_score);
+
+    setResultData(resultData);
+    setOriginalResultData(resultData);
   }, [csvResultData, csvRecommendationData]);
 
   useEffect(() => {
@@ -135,6 +144,7 @@ const ConformanceCheckingSection = () => {
       });
 
       const newData = valueFormatter({ data: enhancedRows });
+      setFaultyVariants(enhancedRows);
       setFaultyEvents(
         enhancedRows.map((x) => x.faultyEventsFromVariant).flat()
       );
@@ -261,7 +271,7 @@ const ConformanceCheckingSection = () => {
             actions={
               <>
                 <Button onClick={() => navigate('/')} design="Emphasized">
-                  Configure Eventlog
+                  Configuration
                 </Button>
               </>
             }
@@ -290,7 +300,50 @@ const ConformanceCheckingSection = () => {
                 selectedOutputRows={selectedOutputRows}
                 markNavigatedInputRow={markNavigatedInputRow}
                 setSelectedInputRows={setSelectedInputRows}
+                originalResultData={originalResultData}
+                setCsvRecommendationData={setCsvRecommendationData}
+                setCsvResultData={setCsvResultData}
               />
+            }
+          />
+          <Route
+            path="/variants"
+            element={
+              <>
+                <ChartBar />
+                <div
+                  style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    marginBottom: 20,
+                  }}
+                >
+                  <Title style={{ width: 300 }}>(select event on click)</Title>
+                  {colors.map(({ color, text }) => (
+                    <span
+                      key={color}
+                      style={{
+                        padding: 8,
+                        backgroundColor: color,
+                        width: '200px',
+                        height: '50px',
+                        display: 'inline-block',
+                        color: 'black',
+                        textAlign: 'center',
+                      }}
+                    >
+                      {text}
+                    </span>
+                  ))}
+                  <Button design="Transparent" icon="full-screen" />
+                </div>
+                <EventVariantsDisplay
+                  data={data2}
+                  newData={faultyVariants}
+                  setDialogIsOpen={setDialogIsOpen}
+                  setRightClickInfo={setRightClickInfo}
+                />
+              </>
             }
           />
           <Route

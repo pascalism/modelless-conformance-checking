@@ -38,10 +38,16 @@ export const findFaultyEventFromFaultyEventsArray = (
 };
 
 export const reduceFaultyEventsArray = (acc, currentRow) => {
-  const a = find(acc, { eventName: currentRow.left_op });
+  const eventName = !isNil(
+    JSON.parse(currentRow.log_label_left.replace(/'/g, '"'))[0]
+  )
+    ? JSON.parse(currentRow.log_label_left.replace(/'/g, '"'))[0]
+    : currentRow.left_op;
+  const a = find(acc, { eventName });
+  // eventName: algorithm (currentRow): log_label_left[0] | left_op
   if (!isNil(a)) {
     return replaceAt(acc, indexOf(acc, a), {
-      eventName: currentRow.left_op,
+      eventName,
       reason: !isNil(a)
         ? [
             ...a.reason,
@@ -61,7 +67,7 @@ export const reduceFaultyEventsArray = (acc, currentRow) => {
   return [
     ...acc,
     {
-      eventName: currentRow.left_op,
+      eventName,
       reason: [
         {
           reason: currentRow.nat_lang_template,
