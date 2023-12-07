@@ -21,6 +21,7 @@ const SuggestedConstraintsTable = ({
       <AnalyticalTable
         minRows={9}
         maxRows={10}
+        visibleRows="10"
         markNavigatedRow={markNavigatedInputRow}
         groupable
         scaleWidthMode="Smart"

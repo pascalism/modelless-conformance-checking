@@ -8,7 +8,6 @@ const SankeyChart = ({
   data2,
   setDialogIsOpen,
 }) => {
-  console.log(setRightClickInfo, faultyEvents, data2, setDialogIsOpen);
   const reduceToSankeyArray = (inputData) => {
     const data = [];
     const links = [];
@@ -83,7 +82,6 @@ const SankeyChart = ({
       { source: [], target: [], value: [] }
     );
 
-  console.log(source, target, value);
   return (
     <>
       <div>

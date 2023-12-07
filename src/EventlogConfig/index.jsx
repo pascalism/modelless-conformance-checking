@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Button,
   Title,
@@ -10,8 +10,11 @@ import {
   WizardStep,
   ButtonDesign,
   WrappingType,
+  FlexBox,
+  Select,
+  Option,
 } from '@ui5/webcomponents-react';
-import { objectMap } from '../util';
+import { objectMap, fetchData } from '../util';
 import SuggestedConstraintsTable from '../SuggestedConstraintsTable';
 import ViolatedConstraintsTable from '../ViolatedConstraintsTable';
 
@@ -29,12 +32,69 @@ const EventlogConfig = ({
   selectedOutputRows,
   markNavigatedInputRow,
   setSelectedInputRows,
+  originalResultData,
+  setCsvRecommendationData,
+  setCsvResultData,
 }) => {
   const [selectedWizard, setSelectedWizard] = useState({
     1: { selected: true, disabled: false },
     2: { selected: false, disabled: true },
     3: { selected: false, disabled: true },
   });
+
+  const [selectedFile, setSelectedFile] = useState({
+    text: 'Test Log',
+    value: 'Test Log',
+  });
+  /*
+            {
+              text: 'Test Log',
+              value: 'test_log',
+            },
+            {
+              text: 'Salesforce Log',
+              value: 'salesforce_log',
+            },
+            {
+              text: 'BPI Challenge Log',
+              value: 'bpi_log', // missing
+            },
+  */
+  useEffect(() => {
+    console.log('here', selectedFile);
+    switch (selectedFile) {
+      case 'Test Log':
+        fetchData(
+          setCsvRecommendationData,
+          'src/files/runningexample.xes-recommended_constraintsv_newcolumn.csv'
+        );
+        fetchData(
+          setCsvResultData,
+          'src/files/runningexample.xes-violations_newcolumn.csv'
+        );
+        return;
+      case 'Salesforce Log':
+        fetchData(
+          setCsvRecommendationData,
+          'src/files/borodoro_2_0-events.pkl-recommended_constraints.csv'
+        );
+        fetchData(
+          setCsvResultData,
+          'src/files/borodoro_2_0-events.pkl-violations_lesscolumns.csv'
+        );
+        return;
+      default:
+        fetchData(
+          setCsvRecommendationData,
+          'src/files/runningexample.xes-recommended_constraintsv_newcolumn.csv'
+        );
+        fetchData(
+          setCsvResultData,
+          'src/files/runningexample.xes-violations_newcolumn.csv'
+        );
+        break;
+    }
+  }, [selectedFile, setCsvRecommendationData, setCsvResultData]);
 
   const handleStepChange = (e) => {
     setSelectedWizard({
@@ -78,6 +138,34 @@ const EventlogConfig = ({
         <FileUploader hideInput>
           <Badge>{'Upload file'}</Badge>
         </FileUploader>
+        <Title>Use pre-configured Event log</Title>
+        <Select
+          onChange={(event) =>
+            setSelectedFile(event.detail.selectedOption.innerText)
+          }
+          style={{ width: '100%' }}
+        >
+          {[
+            {
+              text: 'Test Log',
+              value: 'test_log',
+            },
+            {
+              text: 'Salesforce Log',
+              value: 'salesforce_log',
+            },
+            {
+              text: 'BPI Challenge Log',
+              value: 'bpi_log', // missing
+            },
+          ].map(({ text, value }) => {
+            return (
+              <Option key={value} selected={value === selectedFile.value}>
+                {text}
+              </Option>
+            );
+          })}
+        </Select>
         <br />
         <Button
           design={ButtonDesign.Emphasized}
@@ -94,11 +182,8 @@ const EventlogConfig = ({
           Continue to Configure Suggested Constraints
         </Button>
         <br />
-        <Button icon="donut-chart" onClick={() => navigate('/sunburst')}>
-          Sunburst
-        </Button>
-        <Button icon="opportunity" onClick={() => navigate('/sankey')}>
-          Sankey
+        <Button icon="opportunity" onClick={() => navigate('/sunburst')}>
+          Continue to Visualization
         </Button>
       </WizardStep>
       <WizardStep
@@ -146,6 +231,9 @@ const EventlogConfig = ({
         >
           Continue to Violated Constraints
         </Button>
+        <Button icon="opportunity" onClick={() => navigate('/sunburst')}>
+          Continue to Visualization
+        </Button>
       </WizardStep>
       <WizardStep
         icon="lead"
@@ -177,21 +265,22 @@ const EventlogConfig = ({
             selectedOutputRows={selectedOutputRows}
           />
         ) : null}
-        <Button
-          icon="delete"
-          onClick={() =>
-            deleteSelected(resultData, selectedOutputRows, setResultData)
-          }
-        >
-          Delete Selected
-        </Button>
         <br />
-        <Button icon="donut-chart" onClick={() => navigate('/sunburst')}>
-          Sunburst
-        </Button>
-        <Button icon="opportunity" onClick={() => navigate('/sankey')}>
-          Sankey
-        </Button>
+        <FlexBox>
+          <Button
+            icon="reset"
+            onClick={() => setResultData(originalResultData)}
+          >
+            Reset Violated Constraints
+          </Button>
+          <br />
+          <Button icon="opportunity" onClick={() => navigate('/sunburst')}>
+            Show Diff
+          </Button>
+          <Button icon="opportunity" onClick={() => navigate('/sunburst')}>
+            Continue to Visualization
+          </Button>
+        </FlexBox>
       </WizardStep>
     </Wizard>
   );

@@ -3,9 +3,12 @@ import {
   MultiComboBox,
   MultiComboBoxItem,
   Button,
+  Select,
+  Option,
 } from '@ui5/webcomponents-react';
-import { CONSTRAINT_LEVELS, filterFn } from '../util';
+import { CONSTRAINT_LEVELS, RELEVANCE_LEVELS, filterFn } from '../util';
 import { without, isNil } from 'lodash';
+import { useState } from 'react';
 
 const ViolatedConstraintsTable = ({
   onRowSelect,
@@ -16,6 +19,7 @@ const ViolatedConstraintsTable = ({
   resultData,
   selectedOutputRows,
 }) => {
+  const [relevanceScoreFilter, setRelevanceScoreFilter] = useState('0.5');
   return !isNil(resultData) ? (
     <>
       <AnalyticalTable
@@ -35,6 +39,40 @@ const ViolatedConstraintsTable = ({
             headerTooltip: 'relevance_score',
             disableGroupBy: true,
             defaultCanSort: true,
+            filter: (rows, accessor, filterValue) => {
+              setResultData(
+                resultData.filter((x) => x.relevance_score >= filterValue)
+              );
+              return rows.filter((row) => row.values[accessor] >= filterValue);
+            },
+            Filter: ({ column, popoverRef }) => {
+              const handleChange = (event) => {
+                // set filter
+                column.setFilter(
+                  event.detail.selectedOption.innerText.slice(1)
+                );
+                setRelevanceScoreFilter(
+                  event.detail.selectedOption.innerText.slice(1)
+                );
+                // close popover
+                popoverRef.current.close();
+              };
+
+              return (
+                <Select onChange={handleChange} style={{ width: '100%' }}>
+                  {RELEVANCE_LEVELS.map(({ text, value }) => {
+                    return (
+                      <Option
+                        key={value}
+                        selected={value === relevanceScoreFilter}
+                      >
+                        {text}
+                      </Option>
+                    );
+                  })}
+                </Select>
+              );
+            },
           },
           {
             Header: () => <span>Level</span>,
