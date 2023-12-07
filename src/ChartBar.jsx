@@ -36,6 +36,15 @@ const ChartBar = () => {
           Table View
         </Button>
       </span>
+      <span>
+        <Button
+          active={pathname === '/variants'}
+          icon=""
+          onClick={() => navigate('/variants')}
+        >
+          Variant View
+        </Button>
+      </span>
     </Bar>
   );
 };
