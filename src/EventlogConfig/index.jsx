@@ -17,8 +17,12 @@ import {
 import { objectMap, fetchData } from '../util';
 import SuggestedConstraintsTable from '../SuggestedConstraintsTable';
 import ViolatedConstraintsTable from '../ViolatedConstraintsTable';
+import variant_array_short from '../files/variant_array_short';
+import variant_array_salesforce from '../files/variant_array_salesforce';
+import variant_array_bpichallenge from '../files/variant_array_bpichallenge';
 
 const EventlogConfig = ({
+  setVariantData,
   navigate,
   constraintData,
   deleteSelected,
@@ -32,7 +36,7 @@ const EventlogConfig = ({
   selectedOutputRows,
   markNavigatedInputRow,
   setSelectedInputRows,
-  originalResultData,
+  //   originalResultData,
   setCsvRecommendationData,
   setCsvResultData,
 }) => {
@@ -61,7 +65,6 @@ const EventlogConfig = ({
             },
   */
   useEffect(() => {
-    console.log('here', selectedFile);
     switch (selectedFile) {
       case 'Test Log':
         fetchData(
@@ -72,6 +75,7 @@ const EventlogConfig = ({
           setCsvResultData,
           'src/files/runningexample.xes-violations_newcolumn.csv'
         );
+        setVariantData(variant_array_short);
         return;
       case 'Salesforce Log':
         fetchData(
@@ -82,6 +86,18 @@ const EventlogConfig = ({
           setCsvResultData,
           'src/files/borodoro_2_0-events.pkl-violations_lesscolumns.csv'
         );
+        setVariantData(variant_array_salesforce);
+        return;
+      case 'BPI Challenge Log':
+        fetchData(
+          setCsvRecommendationData,
+          'src/files/BPI_Challenge_2019-3-w-after.xes-recommended_constraints_newcolumns.csv'
+        );
+        fetchData(
+          setCsvResultData,
+          'src/files/BPI_Challenge_2019-3-w-after.xes-violations_newcolumns.csv'
+        );
+        setVariantData(variant_array_bpichallenge);
         return;
       default:
         fetchData(
@@ -92,9 +108,15 @@ const EventlogConfig = ({
           setCsvResultData,
           'src/files/runningexample.xes-violations_newcolumn.csv'
         );
+        setVariantData(variant_array_short);
         break;
     }
-  }, [selectedFile, setCsvRecommendationData, setCsvResultData]);
+  }, [
+    selectedFile,
+    setCsvRecommendationData,
+    setCsvResultData,
+    setVariantData,
+  ]);
 
   const handleStepChange = (e) => {
     setSelectedWizard({
@@ -267,12 +289,12 @@ const EventlogConfig = ({
         ) : null}
         <br />
         <FlexBox>
-          <Button
+          {/* <Button
             icon="reset"
             onClick={() => setResultData(originalResultData)}
           >
             Reset Violated Constraints
-          </Button>
+          </Button> */}
           <br />
           <Button icon="opportunity" onClick={() => navigate('/sunburst')}>
             Show Diff

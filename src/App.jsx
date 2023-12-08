@@ -35,6 +35,7 @@ const ConformanceCheckingSection = () => {
 
   const [csvRecommendationData, setCsvRecommendationData] = useState([]);
   const [csvResultData, setCsvResultData] = useState([]);
+  const [variantData, setVariantData] = useState(data2);
 
   useEffect(() => {
     fetchData(
@@ -47,7 +48,7 @@ const ConformanceCheckingSection = () => {
     );
   }, []);
 
-  const { data, links } = reduceToSankeyArray(data2);
+  const { data, links } = reduceToSankeyArray(variantData);
 
   const { source, target, value } = links
     .map((x) => [
@@ -75,7 +76,7 @@ const ConformanceCheckingSection = () => {
 
   const [constraintData, setConstraintData] = useState();
   const [resultData, setResultData] = useState();
-  const [originalResultData, setOriginalResultData] = useState([]);
+  //   const [originalResultData, setOriginalResultData] = useState([]);
 
   const [selectedInputRows, setSelectedInputRows] = useState([]);
   const [selectedOutputRows, setSelectedOutputRows] = useState([]);
@@ -115,7 +116,7 @@ const ConformanceCheckingSection = () => {
       .sort((a, b) => b.relevance_score - a.relevance_score);
 
     setResultData(resultData);
-    setOriginalResultData(resultData);
+    // setOriginalResultData(resultData);
   }, [csvResultData, csvRecommendationData]);
 
   useEffect(() => {
@@ -124,7 +125,7 @@ const ConformanceCheckingSection = () => {
         ...new Set(resultData.reduce(reduceFaultyEventsArray, [])),
       ];
 
-      const enhancedRows = data2.map((currentRow) => {
+      const enhancedRows = variantData.map((currentRow) => {
         const events = currentRow.slice(0, currentRow.length - 1);
         // here we need a magic function that returns all relevant events
         // faulty = includesEvent | includes part of a faulty event name | not faulty
@@ -156,7 +157,7 @@ const ConformanceCheckingSection = () => {
         })
       );
     }
-  }, [resultData]);
+  }, [resultData, variantData]);
 
   const markNavigatedInputRow = useCallback(
     (row) => {
@@ -287,6 +288,7 @@ const ConformanceCheckingSection = () => {
             path="/"
             element={
               <EventlogConfig
+                setVariantData={setVariantData}
                 navigate={navigate}
                 constraintData={constraintData}
                 deleteSelected={deleteSelected}
@@ -300,7 +302,7 @@ const ConformanceCheckingSection = () => {
                 selectedOutputRows={selectedOutputRows}
                 markNavigatedInputRow={markNavigatedInputRow}
                 setSelectedInputRows={setSelectedInputRows}
-                originalResultData={originalResultData}
+                // originalResultData={originalResultData}
                 setCsvRecommendationData={setCsvRecommendationData}
                 setCsvResultData={setCsvResultData}
               />
@@ -338,7 +340,7 @@ const ConformanceCheckingSection = () => {
                   <Button design="Transparent" icon="full-screen" />
                 </div>
                 <EventVariantsDisplay
-                  data={data2}
+                  data={variantData}
                   newData={faultyVariants}
                   setDialogIsOpen={setDialogIsOpen}
                   setRightClickInfo={setRightClickInfo}

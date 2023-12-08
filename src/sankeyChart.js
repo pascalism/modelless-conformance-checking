@@ -52,8 +52,8 @@ function reduceToSankeyArray(inputData) {
   return { data, links: consolidatedLinks };
 }
 
-export const Sankey = (data2) => {
-  const sankeyItems = reduceToSankeyArray(data2);
+export const Sankey = ({ variantData }) => {
+  const sankeyItems = reduceToSankeyArray(variantData);
   const defaultOptionsSankey = {
     series: {
       layout: 'none',

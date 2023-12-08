@@ -5,7 +5,7 @@ import Plot from 'react-plotly.js';
 const SankeyChart = ({
   setRightClickInfo,
   faultyEvents,
-  data2,
+  variantData,
   setDialogIsOpen,
 }) => {
   const reduceToSankeyArray = (inputData) => {
@@ -59,7 +59,7 @@ const SankeyChart = ({
 
     return { data: uniqBy(data, 'name'), links: consolidatedLinks };
   };
-  const { data, links } = reduceToSankeyArray(data2);
+  const { data, links } = reduceToSankeyArray(variantData);
 
   const { source, target, value } = links
     .map((x) => [
