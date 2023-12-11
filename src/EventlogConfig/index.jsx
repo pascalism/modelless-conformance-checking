@@ -42,8 +42,8 @@ const EventlogConfig = ({
 }) => {
   const [selectedWizard, setSelectedWizard] = useState({
     1: { selected: true, disabled: false },
-    2: { selected: false, disabled: true },
-    3: { selected: false, disabled: true },
+    2: { selected: false, disabled: false }, // change to disabled: true
+    3: { selected: false, disabled: false }, // change to disabled: true
   });
 
   const [selectedFile, setSelectedFile] = useState({
