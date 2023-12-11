@@ -36,7 +36,8 @@ const EventlogConfig = ({
   selectedOutputRows,
   markNavigatedInputRow,
   setSelectedInputRows,
-  //   originalResultData,
+  originalResultData,
+  setOriginalVariantData,
   setCsvRecommendationData,
   setCsvResultData,
 }) => {
@@ -46,10 +47,7 @@ const EventlogConfig = ({
     3: { selected: false, disabled: false }, // change to disabled: true
   });
 
-  const [selectedFile, setSelectedFile] = useState({
-    text: 'Test Log',
-    value: 'Test Log',
-  });
+  const [selectedFile, setSelectedFile] = useState({});
   /*
             {
               text: 'Test Log',
@@ -76,6 +74,7 @@ const EventlogConfig = ({
           'src/files/runningexample.xes-violations_newcolumn.csv'
         );
         setVariantData(variant_array_short);
+        setOriginalVariantData(variant_array_short);
         return;
       case 'Salesforce Log':
         fetchData(
@@ -87,6 +86,7 @@ const EventlogConfig = ({
           'src/files/borodoro_2_0-events.pkl-violations_lesscolumns.csv'
         );
         setVariantData(variant_array_salesforce);
+        setOriginalVariantData(variant_array_salesforce);
         return;
       case 'BPI Challenge Log':
         fetchData(
@@ -98,24 +98,17 @@ const EventlogConfig = ({
           'src/files/BPI_Challenge_2019-3-w-after.xes-violations_newcolumns.csv'
         );
         setVariantData(variant_array_bpichallenge);
+        setOriginalVariantData(variant_array_bpichallenge);
         return;
       default:
-        fetchData(
-          setCsvRecommendationData,
-          'src/files/runningexample.xes-recommended_constraintsv_newcolumn.csv'
-        );
-        fetchData(
-          setCsvResultData,
-          'src/files/runningexample.xes-violations_newcolumn.csv'
-        );
-        setVariantData(variant_array_short);
-        break;
+        return;
     }
   }, [
     selectedFile,
     setCsvRecommendationData,
     setCsvResultData,
     setVariantData,
+    setOriginalVariantData,
   ]);
 
   const handleStepChange = (e) => {
@@ -178,7 +171,7 @@ const EventlogConfig = ({
             },
             {
               text: 'BPI Challenge Log',
-              value: 'bpi_log', // missing
+              value: 'bpi_log',
             },
           ].map(({ text, value }) => {
             return (
@@ -289,12 +282,12 @@ const EventlogConfig = ({
         ) : null}
         <br />
         <FlexBox>
-          {/* <Button
+          <Button
             icon="reset"
             onClick={() => setResultData(originalResultData)}
           >
             Reset Violated Constraints
-          </Button> */}
+          </Button>
           <br />
           <Button icon="opportunity" onClick={() => navigate('/sunburst')}>
             Show Diff
