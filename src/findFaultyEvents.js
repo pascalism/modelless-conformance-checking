@@ -39,9 +39,9 @@ export const findFaultyEventFromFaultyEventsArray = (
 
 export const reduceFaultyEventsArray = (acc, currentRow) => {
   const eventName = !isNil(
-    JSON.parse(currentRow.log_label_left.replace(/'/g, '"'))[0]
+    JSON.parse(currentRow?.log_label_left?.replace(/'/g, '"'))[0]
   )
-    ? JSON.parse(currentRow.log_label_left.replace(/'/g, '"'))[0]
+    ? JSON.parse(currentRow?.log_label_left?.replace(/'/g, '"'))[0]
     : currentRow.left_op;
   const a = find(acc, { eventName });
   // eventName: algorithm (currentRow): log_label_left[0] | left_op
