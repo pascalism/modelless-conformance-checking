@@ -1,7 +1,6 @@
 /* eslint-disable react/prop-types */
 import { useEffect, useState, useCallback } from 'react';
 import {
-  AnalyticalTable,
   Button,
   DynamicPageHeader,
   DynamicPage,
@@ -9,11 +8,19 @@ import {
   Title,
   FlexBox,
   Label,
-  Dialog,
+  Badge,
 } from '@ui5/webcomponents-react';
 import { Route, Routes, useNavigate } from 'react-router-dom';
 import '@ui5/webcomponents-icons/dist/AllIcons.js';
-import { without, isNil, isEmpty, find, indexOf, uniqBy, tail } from 'lodash';
+import {
+  isNil,
+  isEmpty,
+  find,
+  indexOf,
+  uniqBy,
+  tail,
+  differenceWith,
+} from 'lodash';
 import reduceToSankeyArray from './SankeyChart/reduceToSankeyArray';
 import Plot from 'react-plotly.js';
 import { deleteSelected, fetchData, colors, findLabel } from './util';
@@ -29,6 +36,8 @@ import SunburstChart from './SunburstChart';
 import EventlogConfig from './EventlogConfig';
 import ViolatedConstraintsTable from './ViolatedConstraintsTable';
 import EventVariantsDisplay from './EventVariantsDisplay';
+import EventLevelConstraintsDialog from './EventLevelConstraintsDialog';
+import DeletedConstraintsTable from './DeletedConstraintsTable';
 
 const ConformanceCheckingSection = () => {
   const navigate = useNavigate();
@@ -36,6 +45,20 @@ const ConformanceCheckingSection = () => {
   const [csvRecommendationData, setCsvRecommendationData] = useState([]);
   const [csvResultData, setCsvResultData] = useState([]);
   const [variantData, setVariantData] = useState(data2);
+  const [rightClickInfo, setRightClickInfo] = useState(false);
+  const [dialogIsOpen, setDialogIsOpen] = useState(false);
+
+  const [constraintData, setConstraintData] = useState();
+  const [resultData, setResultData] = useState();
+  const [originalResultData, setOriginalResultData] = useState([]);
+  const [originalVariantData, setOriginalVariantData] = useState(data2);
+  const [diffData, setDiffData] = useState([]);
+
+  const [selectedInputRows, setSelectedInputRows] = useState([]);
+  const [selectedOutputRows, setSelectedOutputRows] = useState([]);
+  const [sunburstData, setSunburstData] = useState([]);
+  const [faultyEvents, setFaultyEvents] = useState([]);
+  const [faultyVariants, setFaultyVariants] = useState([]);
 
   useEffect(() => {
     fetchData(
@@ -71,19 +94,6 @@ const ConformanceCheckingSection = () => {
       { source: [], target: [], value: [] }
     );
 
-  const [rightClickInfo, setRightClickInfo] = useState(false);
-  const [dialogIsOpen, setDialogIsOpen] = useState(false);
-
-  const [constraintData, setConstraintData] = useState();
-  const [resultData, setResultData] = useState();
-  //   const [originalResultData, setOriginalResultData] = useState([]);
-
-  const [selectedInputRows, setSelectedInputRows] = useState([]);
-  const [selectedOutputRows, setSelectedOutputRows] = useState([]);
-  const [sunburstData, setSunburstData] = useState();
-  const [faultyEvents, setFaultyEvents] = useState([]);
-  const [faultyVariants, setFaultyVariants] = useState([]);
-
   const onRowSelect = (e, setSelectedRows) => {
     const rows = e.detail.selectedFlatRows.map((x) => x.original);
     setSelectedRows(rows);
@@ -116,7 +126,7 @@ const ConformanceCheckingSection = () => {
       .sort((a, b) => b.relevance_score - a.relevance_score);
 
     setResultData(resultData);
-    // setOriginalResultData(resultData);
+    setOriginalResultData(resultData);
   }, [csvResultData, csvRecommendationData]);
 
   useEffect(() => {
@@ -149,7 +159,13 @@ const ConformanceCheckingSection = () => {
       setFaultyEvents(
         enhancedRows.map((x) => x.faultyEventsFromVariant).flat()
       );
-
+      setDiffData(
+        differenceWith(
+          originalResultData,
+          resultData,
+          (x, y) => x.obs_id === y.obs_id
+        )
+      );
       setSunburstData(
         sunburstOptions({
           data: newData.data,
@@ -157,7 +173,7 @@ const ConformanceCheckingSection = () => {
         })
       );
     }
-  }, [resultData, variantData]);
+  }, [resultData, variantData, originalResultData]);
 
   const markNavigatedInputRow = useCallback(
     (row) => {
@@ -177,85 +193,16 @@ const ConformanceCheckingSection = () => {
 
   return (
     <div style={{ height: '100%', width: '100%', margin: 0, padding: 0 }}>
-      <Dialog
-        open={dialogIsOpen}
-        onAfterClose={() => setDialogIsOpen(false)}
-        style={{ height: '100%', width: '100%' }}
-      >
-        <div>{rightClickInfo?.name}</div>
-        <AnalyticalTable
-          groupable
-          scaleWidthMode="Smart"
-          filterable
-          data={rightClickInfo?.reason}
-          columns={[
-            {
-              Header: 'Constraint',
-              accessor: 'reason',
-              headerTooltip: 'reason',
-            },
-            {
-              Cell: (instance) => {
-                const { row, webComponentsReactProperties } = instance;
-                // disable buttons if overlay is active to prevent focus
-                const isOverlay = webComponentsReactProperties.showOverlay;
-                // console.log('This is your row data', row.original);
-                const onDelete = () => {
-                  const rows = row.original
-                    ? [row.original]
-                    : row.leafRows.map((x) => x.original);
-
-                  setIgnoreConstraint([...ignoreConstraint, ...rows]);
-
-                  setRightClickInfo({
-                    ...rightClickInfo,
-                    reason: without(rightClickInfo.reason, ...rows),
-                  });
-                };
-                return (
-                  <Button
-                    icon="delete"
-                    disabled={isOverlay}
-                    onClick={onDelete}
-                  />
-                );
-              },
-              Header: '',
-              accessor: '.',
-              width: 50,
-              disableFilters: true,
-              disableGroupBy: true,
-              disableResizing: true,
-              disableSortBy: true,
-              id: 'actions',
-            },
-          ]}
-        />
-        <div style={{ marginBottom: 0 }}>
-          <Button
-            onClick={() => {
-              setDialogIsOpen(false);
-              setIgnoreConstraint([]);
-            }}
-          >
-            Close
-          </Button>
-          <Button
-            onClick={() => {
-              setDialogIsOpen(false);
-              setResultData(
-                resultData.filter(
-                  (x) => !find(ignoreConstraint, (y) => y.obs_id === x.obs_id)
-                )
-              );
-
-              setIgnoreConstraint([]);
-            }}
-          >
-            Apply
-          </Button>
-        </div>
-      </Dialog>
+      <EventLevelConstraintsDialog
+        dialogIsOpen={dialogIsOpen}
+        setDialogIsOpen={setDialogIsOpen}
+        rightClickInfo={rightClickInfo}
+        setIgnoreConstraint={setIgnoreConstraint}
+        setRightClickInfo={setRightClickInfo}
+        ignoreConstraint={ignoreConstraint}
+        setResultData={setResultData}
+        resultData={resultData}
+      />
       <DynamicPage
         headerContent={
           <DynamicPageHeader>
@@ -278,7 +225,37 @@ const ConformanceCheckingSection = () => {
             }
             header={<Title>VISCOSE</Title>}
             subHeader={
-              <Label>Visualization of declarative Conformance Checking</Label>
+              <>
+                <Badge
+                  style={{ width: 200 }}
+                  onClick={() => navigate('/variants')}
+                >
+                  Variants: {variantData?.length}
+                </Badge>
+                <Badge
+                  style={{ width: 200 }}
+                  onClick={() => navigate('/table')}
+                >
+                  Constraints: {resultData?.length}
+                </Badge>
+                <br />
+                <Badge
+                  style={{ width: 200 }}
+                  onClick={() => navigate('/variants')}
+                >
+                  Deleted Variants:
+                  {originalVariantData?.length - variantData?.length}
+                </Badge>
+                <Badge
+                  style={{ width: 200 }}
+                  onClick={() => navigate('/deleted-constraints-table')}
+                >
+                  Deleted Constraints:
+                  {originalResultData?.length - resultData?.length}
+                </Badge>
+                <br />
+                <Label>Visualization of declarative Conformance Checking</Label>
+              </>
             }
           ></DynamicPageTitle>
         }
@@ -302,7 +279,8 @@ const ConformanceCheckingSection = () => {
                 selectedOutputRows={selectedOutputRows}
                 markNavigatedInputRow={markNavigatedInputRow}
                 setSelectedInputRows={setSelectedInputRows}
-                // originalResultData={originalResultData}
+                originalResultData={originalResultData}
+                setOriginalVariantData={setOriginalVariantData}
                 setCsvRecommendationData={setCsvRecommendationData}
                 setCsvResultData={setCsvResultData}
               />
@@ -337,13 +315,14 @@ const ConformanceCheckingSection = () => {
                       {text}
                     </span>
                   ))}
-                  <Button design="Transparent" icon="full-screen" />
                 </div>
                 <EventVariantsDisplay
-                  data={variantData}
+                  originalVariantData={originalVariantData}
+                  variantData={variantData}
                   newData={faultyVariants}
                   setDialogIsOpen={setDialogIsOpen}
                   setRightClickInfo={setRightClickInfo}
+                  setVariantData={setVariantData}
                 />
               </>
             }
@@ -371,6 +350,36 @@ const ConformanceCheckingSection = () => {
                     setSelectedOutputRows={setSelectedOutputRows}
                     setResultData={setResultData}
                     resultData={resultData}
+                    selectedOutputRows={selectedOutputRows}
+                  />
+                ) : null}
+              </>
+            }
+          />
+          <Route
+            path="/deleted-constraints-table"
+            element={
+              <>
+                <ChartBar />
+                <div
+                  style={{
+                    height: '100%',
+                    display: 'flex',
+                    alignItems: 'center',
+                    flexDirection: 'row-reverse',
+                  }}
+                >
+                  <Button design="Transparent" icon="full-screen" />
+                </div>
+                {resultData ? (
+                  <DeletedConstraintsTable
+                    onRowSelect={onRowSelect}
+                    deleteSelected={deleteSelected}
+                    markNavigatedOutputRow={markNavigatedOutputRow}
+                    setSelectedOutputRows={setSelectedOutputRows}
+                    setResultData={setResultData}
+                    resultData={resultData}
+                    diffData={diffData}
                     selectedOutputRows={selectedOutputRows}
                   />
                 ) : null}

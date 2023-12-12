@@ -7,7 +7,7 @@ export const colors = [
   { color: 'green', text: 'event is part of conformant variant' },
   { color: 'yellow', text: 'event is part of non-conformant variant' },
   { color: 'orange', text: 'event is likely non-conformant' },
-  { color: 'red', text: 'event is nonconformant' },
+  { color: 'red', text: 'event is non-conformant' },
 ];
 
 export const findLabel = (row, leftOrRight) =>

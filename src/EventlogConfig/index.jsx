@@ -289,7 +289,10 @@ const EventlogConfig = ({
             Reset Violated Constraints
           </Button>
           <br />
-          <Button icon="opportunity" onClick={() => navigate('/sunburst')}>
+          <Button
+            icon="opportunity"
+            onClick={() => navigate('/deleted-constraints-table')}
+          >
             Show Diff
           </Button>
           <Button icon="opportunity" onClick={() => navigate('/sunburst')}>

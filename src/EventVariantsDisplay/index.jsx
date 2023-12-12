@@ -6,8 +6,10 @@ import {
   Card,
   Switch,
   Label,
+  CardHeader,
+  Button,
 } from '@ui5/webcomponents-react';
-import { isNil, find } from 'lodash';
+import { isNil, find, isEqual } from 'lodash';
 
 const findColor = (level) => {
   switch (level) {
@@ -26,9 +28,12 @@ const EventVariantsDisplay = ({
   newData,
   setRightClickInfo,
   setDialogIsOpen,
+  setVariantData,
+  originalVariantData,
+  variantData,
 }) => {
   const [showOnlyNonConformant, setShowOnlyNonConformant] = useState(false);
-  console.log(showOnlyNonConformant);
+
   const chartData = newData
     ?.map(({ events, measure, isFaulty, faultyEventsFromVariant }) => {
       return {
@@ -56,48 +61,96 @@ const EventVariantsDisplay = ({
 
   return (
     <>
-      <Label>Only show non-conformant variants</Label>
-      <Switch
-        onChange={() => setShowOnlyNonConformant(!showOnlyNonConformant)}
-        style={{ paddingTop: 20, paddingLeft: 30 }}
-      />
-      <div style={{ overflowX: 'auto', whiteSpace: 'nowrap', height: 500 }}>
+      <div
+        style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          marginBottom: 20,
+        }}
+      >
+        <div>
+          <Label>Only show non-conformant variants</Label>
+          <Switch
+            onChange={() => setShowOnlyNonConformant(!showOnlyNonConformant)}
+            style={{ paddingTop: 20, paddingLeft: 30 }}
+          />
+        </div>
+        <Button onClick={() => setVariantData(originalVariantData)}>
+          Reset Variants
+        </Button>
+      </div>
+      <div style={{ overflowX: 'auto', whiteSpace: 'nowrap', height: '100%' }}>
         {chartData.map((variant, index) => (
-          <>
+          <div key={index}>
             <Card
+              header={
+                <CardHeader
+                  style={{ color: 'black' }}
+                  titleText={`Occurrence: ${variant.measure}`}
+                />
+              }
               style={{
-                width: 150,
+                width: '95%',
                 margin: '8px',
                 minHeight: 50,
               }}
             >
-              Occurrence: {variant.measure}
+              <FlexBox
+                key={index}
+                style={{
+                  height: 200,
+                  padding: 5,
+                  overflowX: 'auto',
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                <Timeline layout="Horizontal">
+                  {variant.events.map((event, eventIndex) => (
+                    <TimelineItem
+                      nameClickable
+                      onNameClick={() => {
+                        setRightClickInfo(event);
+                        setDialogIsOpen(true);
+                      }}
+                      name={event.eventName}
+                      key={eventIndex}
+                      style={{
+                        width: 200,
+                        margin: '8px',
+                        background: findColor(event.level),
+                      }}
+                    />
+                  ))}
+                </Timeline>
+              </FlexBox>
+              <FlexBox
+                style={{
+                  justifyContent: 'flex-end',
+                }}
+              >
+                <Button
+                  icon="delete"
+                  style={{ margin: 10 }}
+                  onClick={() => {
+                    setVariantData(
+                      variantData.filter(
+                        (y) =>
+                          !isEqual(
+                            y,
+                            [
+                              variant.events.map((x) => x.eventName),
+                              variant.measure,
+                            ].flat()
+                          )
+                      )
+                    );
+                  }}
+                >
+                  Delete Variant
+                </Button>
+              </FlexBox>
             </Card>
-            <FlexBox
-              key={index}
-              style={{ marginBottom: '16px', height: 200, padding: 5 }}
-            >
-              <Timeline layout="Horizontal">
-                {variant.events.map((event, eventIndex) => (
-                  <TimelineItem
-                    nameClickable
-                    onNameClick={() => {
-                      setRightClickInfo(event);
-                      setDialogIsOpen(true);
-                    }}
-                    name={event.eventName}
-                    key={eventIndex}
-                    style={{
-                      width: 200,
-                      margin: '8px',
-                      minHeight: 50,
-                      background: findColor(event.level),
-                    }}
-                  />
-                ))}
-              </Timeline>
-            </FlexBox>
-          </>
+          </div>
         ))}
       </div>
     </>
