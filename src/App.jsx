@@ -28,7 +28,7 @@ import {
   findFaultyEventFromFaultyEventsArray,
   reduceFaultyEventsArray,
 } from './findFaultyEvents';
-import data2 from './files/variant_array_short';
+import data2 from '../.vercel/output/static/files/variant_array_short';
 import ChartBar from './ChartBar';
 import sunburstOptions from './SunburstChart/calcCharOption';
 import valueFormatter from './SunburstChart/valueFormatter';
@@ -63,11 +63,11 @@ const ConformanceCheckingSection = () => {
   useEffect(() => {
     fetchData(
       setCsvRecommendationData,
-      'src/files/runningexample.xes-recommended_constraintsv_newcolumn.csv'
+      '.vercel/output/static/files/runningexample.xes-recommended_constraintsv_newcolumn.csv'
     );
     fetchData(
       setCsvResultData,
-      'src/files/runningexample.xes-violations_newcolumn.csv'
+      '.vercel/output/static/files/runningexample.xes-violations_newcolumn.csv'
     );
   }, []);
 

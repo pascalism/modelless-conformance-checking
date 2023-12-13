@@ -17,9 +17,9 @@ import {
 import { objectMap, fetchData } from '../util';
 import SuggestedConstraintsTable from '../SuggestedConstraintsTable';
 import ViolatedConstraintsTable from '../ViolatedConstraintsTable';
-import variant_array_short from '../files/variant_array_short';
-import variant_array_salesforce from '../files/variant_array_salesforce';
-import variant_array_bpichallenge from '../files/variant_array_bpichallenge';
+import variant_array_short from '../../.vercel/output/static/files/variant_array_short';
+import variant_array_salesforce from '../../.vercel/output/static/files/variant_array_salesforce';
+import variant_array_bpichallenge from '../../.vercel/output/static/files/variant_array_bpichallenge';
 
 const EventlogConfig = ({
   setVariantData,
@@ -63,15 +63,16 @@ const EventlogConfig = ({
             },
   */
   useEffect(() => {
+    console.log(selectedFile);
     switch (selectedFile) {
       case 'Test Log':
         fetchData(
           setCsvRecommendationData,
-          'src/files/runningexample.xes-recommended_constraintsv_newcolumn.csv'
+          '.vercel/output/static/files/runningexample.xes-recommended_constraintsv_newcolumn.csv'
         );
         fetchData(
           setCsvResultData,
-          'src/files/runningexample.xes-violations_newcolumn.csv'
+          '.vercel/output/static/files/runningexample.xes-violations_newcolumn.csv'
         );
         setVariantData(variant_array_short);
         setOriginalVariantData(variant_array_short);
@@ -79,11 +80,11 @@ const EventlogConfig = ({
       case 'Salesforce Log':
         fetchData(
           setCsvRecommendationData,
-          'src/files/borodoro_2_0-events.pkl-recommended_constraints.csv'
+          '.vercel/output/static/files/borodoro_2_0-events.pkl-recommended_constraints.csv'
         );
         fetchData(
           setCsvResultData,
-          'src/files/borodoro_2_0-events.pkl-violations_lesscolumns.csv'
+          '.vercel/output/static/files/borodoro_2_0-events.pkl-violations_lesscolumns.csv'
         );
         setVariantData(variant_array_salesforce);
         setOriginalVariantData(variant_array_salesforce);
@@ -91,11 +92,11 @@ const EventlogConfig = ({
       case 'BPI Challenge Log':
         fetchData(
           setCsvRecommendationData,
-          'src/files/BPI_Challenge_2019-3-w-after.xes-recommended_constraints_newcolumns.csv'
+          '.vercel/output/static/files/BPI_Challenge_2019-3-w-after.xes-recommended_constraints_newcolumns.csv'
         );
         fetchData(
           setCsvResultData,
-          'src/files/BPI_Challenge_2019-3-w-after.xes-violations_newcolumns.csv'
+          '.vercel/output/static/files/BPI_Challenge_2019-3-w-after.xes-violations_newcolumns.csv'
         );
         setVariantData(variant_array_bpichallenge);
         setOriginalVariantData(variant_array_bpichallenge);
@@ -161,6 +162,10 @@ const EventlogConfig = ({
           style={{ width: '100%' }}
         >
           {[
+            {
+              text: 'Select Here',
+              value: '',
+            },
             {
               text: 'Test Log',
               value: 'test_log',
