@@ -14,12 +14,13 @@ import {
   Select,
   Option,
 } from '@ui5/webcomponents-react';
-import { objectMap, fetchData } from '../util';
+import { objectMap } from '../util';
 import SuggestedConstraintsTable from '../SuggestedConstraintsTable';
 import ViolatedConstraintsTable from '../ViolatedConstraintsTable';
-import variant_array_short from '../../.vercel/output/static/files/variant_array_short';
-import variant_array_salesforce from '../../.vercel/output/static/files/variant_array_salesforce';
-import variant_array_bpichallenge from '../../.vercel/output/static/files/variant_array_bpichallenge';
+import variant_array_short from '../variant_array_short';
+import variant_array_salesforce from '../variant_array_salesforce';
+import variant_array_bpichallenge from '../variant_array_bpichallenge';
+import fetchFile from '../fetchFile';
 
 const EventlogConfig = ({
   setVariantData,
@@ -63,40 +64,39 @@ const EventlogConfig = ({
             },
   */
   useEffect(() => {
-    console.log(selectedFile);
     switch (selectedFile) {
       case 'Test Log':
-        fetchData(
+        fetchFile(
           setCsvRecommendationData,
-          '.vercel/output/static/files/runningexample.xes-recommended_constraintsv_newcolumn.csv'
+          'runningexample.xes-recommended_constraintsv_newcolumn.csv'
         );
-        fetchData(
+        fetchFile(
           setCsvResultData,
-          '.vercel/output/static/files/runningexample.xes-violations_newcolumn.csv'
+          'runningexample.xes-violations_newcolumn.csv'
         );
         setVariantData(variant_array_short);
         setOriginalVariantData(variant_array_short);
         return;
       case 'Salesforce Log':
-        fetchData(
+        fetchFile(
           setCsvRecommendationData,
-          '.vercel/output/static/files/borodoro_2_0-events.pkl-recommended_constraints.csv'
+          'borodoro_2_0-events.pkl-recommended_constraints.csv'
         );
-        fetchData(
+        fetchFile(
           setCsvResultData,
-          '.vercel/output/static/files/borodoro_2_0-events.pkl-violations_lesscolumns.csv'
+          'borodoro_2_0-events.pkl-violations_lesscolumns.csv'
         );
         setVariantData(variant_array_salesforce);
         setOriginalVariantData(variant_array_salesforce);
         return;
       case 'BPI Challenge Log':
-        fetchData(
+        fetchFile(
           setCsvRecommendationData,
-          '.vercel/output/static/files/BPI_Challenge_2019-3-w-after.xes-recommended_constraints_newcolumns.csv'
+          'BPI_Challenge_2019-3-w-after.xes-recommended_constraints_newcolumns.csv'
         );
-        fetchData(
+        fetchFile(
           setCsvResultData,
-          '.vercel/output/static/files/BPI_Challenge_2019-3-w-after.xes-violations_newcolumns.csv'
+          'BPI_Challenge_2019-3-w-after.xes-violations_newcolumns.csv'
         );
         setVariantData(variant_array_bpichallenge);
         setOriginalVariantData(variant_array_bpichallenge);

@@ -23,12 +23,12 @@ import {
 } from 'lodash';
 import reduceToSankeyArray from './SankeyChart/reduceToSankeyArray';
 import Plot from 'react-plotly.js';
-import { deleteSelected, fetchData, colors, findLabel } from './util';
+import { deleteSelected, colors, findLabel } from './util';
 import {
   findFaultyEventFromFaultyEventsArray,
   reduceFaultyEventsArray,
 } from './findFaultyEvents';
-import data2 from '../.vercel/output/static/files/variant_array_short';
+import data2 from './variant_array_short';
 import ChartBar from './ChartBar';
 import sunburstOptions from './SunburstChart/calcCharOption';
 import valueFormatter from './SunburstChart/valueFormatter';
@@ -38,6 +38,7 @@ import ViolatedConstraintsTable from './ViolatedConstraintsTable';
 import EventVariantsDisplay from './EventVariantsDisplay';
 import EventLevelConstraintsDialog from './EventLevelConstraintsDialog';
 import DeletedConstraintsTable from './DeletedConstraintsTable';
+import fetchFiles from './fetchFile';
 
 const ConformanceCheckingSection = () => {
   const navigate = useNavigate();
@@ -61,14 +62,12 @@ const ConformanceCheckingSection = () => {
   const [faultyVariants, setFaultyVariants] = useState([]);
 
   useEffect(() => {
-    fetchData(
+    fetchFiles(
       setCsvRecommendationData,
-      '.vercel/output/static/files/runningexample.xes-recommended_constraintsv_newcolumn.csv'
+      'runningexample.xes-recommended_constraintsv_newcolumn.csv'
     );
-    fetchData(
-      setCsvResultData,
-      '.vercel/output/static/files/runningexample.xes-violations_newcolumn.csv'
-    );
+
+    fetchFiles(setCsvResultData, 'runningexample.xes-violations_newcolumn.csv');
   }, []);
 
   const { data, links } = reduceToSankeyArray(variantData);

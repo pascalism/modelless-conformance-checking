@@ -1,3 +1,4 @@
+/* eslint-disable no-undef */
 import { useState, useEffect } from 'react';
 import csvToJson from 'csvtojson';
 import { without, isNil } from 'lodash';
@@ -11,6 +12,7 @@ export const colors = [
 ];
 
 export const findLabel = (row, leftOrRight) =>
+  !isNil(row) &&
   !isNil(row[`log_label_${leftOrRight}`]) &&
   !isNil(JSON.parse(row[`log_label_${leftOrRight}`]?.replace(/'/g, '"'))[0])
     ? JSON.parse(row[`log_label_${leftOrRight}`]?.replace(/'/g, '"'))[0]
@@ -54,17 +56,6 @@ export const replaceAt = (array = [], index, value) => {
   const ret = [...array];
   ret[index] = value;
   return ret;
-};
-
-export const fetchData = async (setState, path) => {
-  const response = await fetch(path);
-  const reader = response.body.getReader();
-  const result = await reader.read();
-  const decoder = new TextDecoder('utf-8');
-  const csvString = decoder.decode(result.value);
-  // Use PapaParse to parse the CSV string into an array
-  const parsedCsv = Papa.parse(csvString, { header: true });
-  setState(parsedCsv.data);
 };
 
 export const makeCompressedMapsExampleInput = () =>
