@@ -19,6 +19,8 @@ import {
   uniqBy,
   tail,
   differenceWith,
+  sum,
+  divide,
 } from 'lodash';
 import reduceToSankeyArray from './SankeyChart/reduceToSankeyArray';
 import Plot from 'react-plotly.js';
@@ -65,6 +67,7 @@ const ConformanceCheckingSection = () => {
   const [faultyVariants, setFaultyVariants] = useState([]);
   const [ignoreConstraint, setIgnoreConstraint] = useState([]);
   const [showOnlyNonConformant, setShowOnlyNonConformant] = useState(false);
+  const [conformanceScore, setConformanceScore] = useState(0);
 
   useEffect(() => {
     fetchFiles(
@@ -158,6 +161,16 @@ const ConformanceCheckingSection = () => {
           faultyEventsFromVariant,
         };
       });
+      console.log(
+        sum(enhancedRows.filter((x) => !x.isFaulty).map((x) => x.measure)),
+        sum(enhancedRows.map((x) => x.measure))
+      );
+      setConformanceScore(
+        divide(
+          sum(enhancedRows.filter((x) => !x.isFaulty).map((x) => x.measure)),
+          sum(enhancedRows.map((x) => x.measure))
+        ).toFixed(3)
+      );
 
       const newData = valueFormatter({ data: enhancedRows });
       setFaultyVariants(enhancedRows);
@@ -224,8 +237,12 @@ const ConformanceCheckingSection = () => {
   const menuItems = [
     { icon: 'reset', text: 'Reset Violated Constraints', key: 'reset' },
     { icon: 'opportunity', text: 'Show Deleted Constraints', key: 'diff' },
-    { icon: 'opportunity', text: 'Show Unmapped', key: 'unmapped' },
-    { icon: 'delete', text: 'Delete Unmapped', key: 'deleteUnmapped' },
+    { icon: 'opportunity', text: 'Show Unmapped Constraints', key: 'unmapped' },
+    {
+      icon: 'delete',
+      text: 'Delete Unmapped Constraints',
+      key: 'deleteUnmapped',
+    },
   ];
 
   return (
@@ -257,6 +274,9 @@ const ConformanceCheckingSection = () => {
               <>
                 {pathname !== '/' && (
                   <>
+                    <Badge style={{ width: 250, height: 20 }}>
+                      Conformance Score: {conformanceScore}
+                    </Badge>
                     <Button onClick={() => navigate('/')} design="Emphasized">
                       Configuration
                     </Button>
@@ -274,35 +294,37 @@ const ConformanceCheckingSection = () => {
                 <br />
                 <br />
                 {pathname !== '/' && (
-                  <div>
-                    <Badge
-                      style={{ width: 200 }}
-                      onClick={() => navigate('/variants')}
-                    >
-                      Variants: {variantData?.length}
-                    </Badge>
-                    <Badge
-                      style={{ width: 200 }}
-                      onClick={() => navigate('/table')}
-                    >
-                      Constraints: {resultData?.length}
-                    </Badge>
-                    <br />
-                    <Badge
-                      style={{ width: 200 }}
-                      onClick={() => navigate('/variants')}
-                    >
-                      Deleted Variants:
-                      {originalVariantData?.length - variantData?.length}
-                    </Badge>
-                    <Badge
-                      style={{ width: 200 }}
-                      onClick={() => navigate('/deleted-constraints-table')}
-                    >
-                      Deleted Constraints:
-                      {originalResultData?.length - resultData?.length}
-                    </Badge>
-                  </div>
+                  <>
+                    <div>
+                      <Badge
+                        style={{ width: 200, margin: 2 }}
+                        onClick={() => navigate('/variants')}
+                      >
+                        Variants: {variantData?.length}
+                      </Badge>
+                      <Badge
+                        style={{ width: 200, margin: 2 }}
+                        onClick={() => navigate('/table')}
+                      >
+                        Constraints: {resultData?.length}
+                      </Badge>
+                      <br />
+                      <Badge
+                        style={{ width: 200, margin: 2 }}
+                        onClick={() => navigate('/variants')}
+                      >
+                        Deleted Variants:
+                        {originalVariantData?.length - variantData?.length}
+                      </Badge>
+                      <Badge
+                        style={{ width: 200, margin: 2 }}
+                        onClick={() => navigate('/deleted-constraints-table')}
+                      >
+                        Deleted Constraints:
+                        {originalResultData?.length - resultData?.length}
+                      </Badge>
+                    </div>
+                  </>
                 )}
               </>
             }
