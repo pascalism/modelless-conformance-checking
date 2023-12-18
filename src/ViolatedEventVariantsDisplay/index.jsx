@@ -27,7 +27,6 @@ const EventVariantsDisplay = ({
   setDialogIsOpen,
   setVariantData,
   variantData,
-  //   diffData,
 }) => {
   const chartData = newData
     ?.map(({ events, measure, isFaulty, faultyEventsFromVariant }) => {

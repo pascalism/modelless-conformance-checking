@@ -20,7 +20,7 @@ const EventLevelConstraintsDialog = ({
     <Dialog
       open={dialogIsOpen}
       onAfterClose={() => setDialogIsOpen(false)}
-      style={{ height: '100%', width: '100%' }}
+      style={{ width: '100%' }}
     >
       <div>{rightClickInfo?.name}</div>
       <AnalyticalTable

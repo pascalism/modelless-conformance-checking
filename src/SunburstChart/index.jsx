@@ -6,9 +6,8 @@ const SunburstChart = ({ sunburstData, setRightClickInfo, setDialogIsOpen }) =>
     <div
       style={{
         display: 'flex',
-        justifyContent: 'space-around',
         alignItems: 'center',
-        marginBottom: 20,
+        justifyContent: 'space-around',
         height: '100%',
         width: '100%',
       }}
@@ -19,7 +18,6 @@ const SunburstChart = ({ sunburstData, setRightClickInfo, setDialogIsOpen }) =>
           justifyContent: 'center',
           alignItems: 'center',
           flexDirection: 'column',
-          marginBottom: 20,
         }}
       >
         {colors.map(({ color, text }) => (
@@ -58,8 +56,9 @@ const SunburstChart = ({ sunburstData, setRightClickInfo, setDialogIsOpen }) =>
       <div
         style={{
           padding: '0 9px 9px',
-          width: 600,
-          height: 600,
+          width: 800,
+          height: 800,
+          margin: 20,
         }}
       >
         <EchartsComponent

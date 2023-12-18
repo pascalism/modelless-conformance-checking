@@ -141,8 +141,12 @@ const EventlogConfig = ({
   const menuItems = [
     { icon: 'reset', text: 'Reset Violated Constraints', key: 'reset' },
     { icon: 'opportunity', text: 'Show Deleted Constraints', key: 'diff' },
-    { icon: 'opportunity', text: 'Show Unmapped', key: 'unmapped' },
-    { icon: 'delete', text: 'Delete Unmapped', key: 'deleteUnmapped' },
+    { icon: 'opportunity', text: 'Show Unmapped Constraints', key: 'unmapped' },
+    {
+      icon: 'delete',
+      text: 'Delete Unmapped Constraints',
+      key: 'deleteUnmapped',
+    },
   ];
 
   return (
