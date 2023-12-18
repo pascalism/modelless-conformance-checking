@@ -4,10 +4,13 @@ import {
   TimelineItem,
   FlexBox,
   Card,
-  Switch,
-  Label,
+  ToolbarSelect,
+  ToolbarSelectOption,
+  Text,
   CardHeader,
   Button,
+  ToolbarV2,
+  ToolbarButton,
 } from '@ui5/webcomponents-react';
 import { isNil, find, isEqual } from 'lodash';
 
@@ -61,25 +64,37 @@ const EventVariantsDisplay = ({
 
   return (
     <>
-      <div
-        style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          marginBottom: 20,
+      <ToolbarV2
+        alignContent={{
+          End: 'End',
+          Start: 'Start',
         }}
       >
-        <div>
-          <Label>Only show non-conformant variants</Label>
-          <Switch
-            onChange={() => setShowOnlyNonConformant(!showOnlyNonConformant)}
-            style={{ paddingTop: 20, paddingLeft: 30 }}
-          />
-        </div>
-        <Button onClick={() => setVariantData(originalVariantData)}>
-          Reset Variants
-        </Button>
-      </div>
-      <div style={{ overflowX: 'auto', whiteSpace: 'nowrap', height: '100%' }}>
+        <ToolbarSelect
+          onChange={() => {
+            setShowOnlyNonConformant(!showOnlyNonConformant);
+          }}
+        >
+          <ToolbarSelectOption selected={!showOnlyNonConformant}>
+            Show all
+          </ToolbarSelectOption>
+          <ToolbarSelectOption selected={showOnlyNonConformant}>
+            Show only non-conformant
+          </ToolbarSelectOption>
+        </ToolbarSelect>
+        <ToolbarButton
+          onClick={() => setVariantData(originalVariantData)}
+          text=" Reset Variants"
+        />
+      </ToolbarV2>
+
+      <div
+        style={{
+          overflowX: 'auto',
+          whiteSpace: 'nowrap',
+          height: '100%',
+        }}
+      >
         {chartData.map((variant, index) => (
           <div key={index}>
             <Card

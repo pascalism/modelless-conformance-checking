@@ -54,12 +54,22 @@ export const reduceFaultyEventsArray = (acc, currentRow) => {
             {
               reason: currentRow.nat_lang_template,
               obs_id: currentRow.obs_id,
+              num_violations: currentRow.num_violations,
+              Object: currentRow.Object,
+              template: currentRow.template,
+              Level: currentRow.Level,
+              relevance_score: currentRow.relevance_score,
             },
           ]
         : [
             {
               reason: currentRow.nat_lang_template,
               obs_id: currentRow.obs_id,
+              num_violations: currentRow.num_violations,
+              Object: currentRow.Object,
+              template: currentRow.template,
+              Level: currentRow.Level,
+              relevance_score: currentRow.relevance_score,
             },
           ],
     });
@@ -72,6 +82,11 @@ export const reduceFaultyEventsArray = (acc, currentRow) => {
         {
           reason: currentRow.nat_lang_template,
           obs_id: currentRow.obs_id,
+          num_violations: currentRow.num_violations,
+          Object: currentRow.Object,
+          template: currentRow.template,
+          Level: currentRow.Level,
+          relevance_score: currentRow.relevance_score,
         },
       ],
     },

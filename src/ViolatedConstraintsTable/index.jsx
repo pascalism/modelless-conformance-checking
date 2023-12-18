@@ -34,8 +34,9 @@ const ViolatedConstraintsTable = ({
         visibleRows="10"
         columns={[
           {
-            Header: 'Relevance Score',
+            Header: 'Relevance',
             accessor: 'relevance_score',
+            width: 50,
             headerTooltip: 'relevance_score',
             disableGroupBy: true,
             defaultCanSort: true,
@@ -79,6 +80,7 @@ const ViolatedConstraintsTable = ({
             selectionMode: 'SingleSelect',
             filter: filterFn,
             accessor: 'Level',
+            width: 100,
             headerTooltip: 'Level of the Constraint',
             disableFilters: false,
             disableGroupBy: false,
@@ -118,6 +120,11 @@ const ViolatedConstraintsTable = ({
             headerTooltip: 'left_op of the Constraint',
           },
           {
+            Header: 'Object',
+            accessor: 'Object',
+            headerTooltip: 'Concerning Object',
+          },
+          {
             Header: 'Natural Language',
             accessor: 'nat_lang_template',
             headerTooltip: 'nat_lang_template',
@@ -129,9 +136,10 @@ const ViolatedConstraintsTable = ({
             headerTooltip: 'template',
           },
           {
-            Header: 'times this violation occurred',
+            Header: '# occurred',
             accessor: 'num_violations',
             headerTooltip: 'num_violations',
+            width: 60,
           },
           {
             Cell: (instance) => {

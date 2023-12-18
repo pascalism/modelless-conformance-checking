@@ -1,12 +1,16 @@
-/* eslint-disable no-undef */
 import { useState, useEffect } from 'react';
 import csvToJson from 'csvtojson';
 import { without, isNil } from 'lodash';
-import Papa from 'papaparse';
 
 export const colors = [
   { color: 'green', text: 'event is part of conformant variant' },
   { color: 'yellow', text: 'event is part of non-conformant variant' },
+  { color: 'orange', text: 'event is likely non-conformant' },
+  { color: 'red', text: 'event is non-conformant' },
+];
+
+export const sankeyColors = [
+  { color: 'green', text: 'event is conformant' },
   { color: 'orange', text: 'event is likely non-conformant' },
   { color: 'red', text: 'event is non-conformant' },
 ];

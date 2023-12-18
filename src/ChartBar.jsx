@@ -1,4 +1,4 @@
-import { Button, Bar } from '@ui5/webcomponents-react';
+import { SegmentedButtonItem, SegmentedButton } from '@ui5/webcomponents-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 
 const ChartBar = () => {
@@ -6,46 +6,47 @@ const ChartBar = () => {
   const navigate = useNavigate();
 
   return (
-    <Bar
-      style={{ marginBottom: 20 }}
-      startContent={
-        <Button
-          active={pathname === '/sunburst'}
-          icon="donut-chart"
-          onClick={() => navigate('/sunburst')}
-        >
-          Sunburst
-        </Button>
-      }
-      endContent={
-        <Button
-          active={pathname === '/sankey'}
-          icon="opportunity"
-          onClick={() => navigate('/sankey')}
-        >
-          Sankey
-        </Button>
-      }
+    <div
+      style={{
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginBottom: 20,
+      }}
     >
-      <span>
-        <Button
-          active={pathname === '/table'}
-          icon="table-view"
-          onClick={() => navigate('/table')}
-        >
-          Table View
-        </Button>
-      </span>
-      <span>
-        <Button
-          active={pathname === '/variants'}
-          icon=""
-          onClick={() => navigate('/variants')}
-        >
-          Variant View
-        </Button>
-      </span>
-    </Bar>
+      <div>
+        <SegmentedButton>
+          <SegmentedButtonItem
+            active={pathname === '/sunburst'}
+            icon="donut-chart"
+            onClick={() => navigate('/sunburst')}
+          >
+            Sunburst
+          </SegmentedButtonItem>
+          <SegmentedButtonItem
+            active={pathname === '/variants'}
+            icon=""
+            onClick={() => navigate('/variants')}
+          >
+            Variant View
+          </SegmentedButtonItem>
+          <SegmentedButtonItem
+            active={pathname === '/sankey'}
+            icon="opportunity"
+            onClick={() => navigate('/sankey')}
+          >
+            Sankey
+          </SegmentedButtonItem>
+          <SegmentedButtonItem
+            active={pathname === '/table'}
+            icon="table-view"
+            onClick={() => navigate('/table')}
+          >
+            Table View
+          </SegmentedButtonItem>
+        </SegmentedButton>
+      </div>
+    </div>
   );
 };
 

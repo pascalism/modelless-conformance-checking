@@ -126,6 +126,7 @@ const EventlogConfig = ({
     <Wizard
       onStepChange={(all) => handleStepChange(all)}
       contentLayout="SingleStep"
+      style={{ height: '100%', width: '100%' }}
     >
       <WizardStep
         icon="product"
@@ -134,77 +135,74 @@ const EventlogConfig = ({
         selected={selectedWizard['1'].selected}
         data-step={'1'}
       >
-        <Title>1. Event log Upload</Title>
-        <Label wrappingType={WrappingType.None}>
-          Sed fermentum, mi et tristique ullamcorper, sapien sapien faucibus
-          sem, quis pretium nibh lorem malesuada diam. Nulla quis arcu aliquet,
-          feugiat massa semper, volutpat diam. Nam vitae ante posuere, molestie
-          neque sit amet, dapibus velit. Maecenas eleifend tempor lorem. Mauris
-          vitae elementum mi, sed eleifend ligula. Nulla tempor vulputate dolor,
-          nec dignissim quam convallis ut. Praesent vitae commodo felis, ut
-          iaculis felis. Fusce quis eleifend sapien, eget facilisis nibh.
-          Suspendisse est velit, scelerisque ut commodo eget, dignissim quis
-          metus. Cras faucibus consequat gravida. Curabitur vitae quam felis.
-          Phasellus ac leo eleifend, commodo tortor et, varius quam. Aliquam
-          erat volutpat
-        </Label>
-        <FileUploader hideInput>
-          <Avatar icon="upload" />
-        </FileUploader>
-        <FileUploader hideInput>
-          <Badge>{'Upload file'}</Badge>
-        </FileUploader>
-        <Title>Use pre-configured Event log</Title>
-        <Select
-          onChange={(event) =>
-            setSelectedFile(event.detail.selectedOption.innerText)
-          }
-          style={{ width: '100%' }}
-        >
-          {[
-            {
-              text: 'Select Here',
-              value: '',
-            },
-            {
-              text: 'Test Log',
-              value: 'test_log',
-            },
-            {
-              text: 'Salesforce Log',
-              value: 'salesforce_log',
-            },
-            {
-              text: 'BPI Challenge Log',
-              value: 'bpi_log',
-            },
-          ].map(({ text, value }) => {
-            return (
-              <Option key={value} selected={value === selectedFile.value}>
-                {text}
-              </Option>
-            );
-          })}
-        </Select>
-        <br />
-        <Button
-          design={ButtonDesign.Emphasized}
-          onClick={() =>
-            setSelectedWizard({
-              ...objectMap(selectedWizard, (x) => ({
-                selected: false,
-                disabled: x.disabled,
-              })),
-              2: { selected: true, disabled: false },
-            })
-          }
-        >
-          Continue to Configure Suggested Constraints
-        </Button>
-        <br />
-        <Button icon="opportunity" onClick={() => navigate('/sunburst')}>
-          Continue to Visualization
-        </Button>
+        <>
+          <Title>1. Event log Upload</Title>
+          <Label wrappingType={WrappingType.Normal}>
+            Theoretically, here you would upload an Event log file to perform a
+            modelless conformance check. Since this is currently a static
+            application, you may choose between the pre-configured event logs.
+          </Label>
+          <br />
+          <FileUploader hideInput style={{ margin: 20 }}>
+            <Avatar icon="upload" />
+          </FileUploader>
+          <FileUploader hideInput>
+            <Badge>{'Upload file'}</Badge>
+          </FileUploader>
+          <Title>Use pre-configured Event log</Title>
+          <Select
+            onChange={(event) =>
+              setSelectedFile(event.detail.selectedOption.innerText)
+            }
+            style={{ width: '100%' }}
+          >
+            {[
+              {
+                text: 'Select Here',
+                value: '',
+              },
+              {
+                text: 'Test Log',
+                value: 'test_log',
+              },
+              {
+                text: 'Salesforce Log',
+                value: 'salesforce_log',
+              },
+              {
+                text: 'BPI Challenge Log',
+                value: 'bpi_log',
+              },
+            ].map(({ text, value }) => {
+              return (
+                <Option key={value} selected={value === selectedFile.value}>
+                  {text}
+                </Option>
+              );
+            })}
+          </Select>
+          <br />
+          <div style={{ margin: 200 }} />
+          <FlexBox justifyContent="SpaceBetween">
+            <Button
+              design={ButtonDesign.Emphasized}
+              onClick={() =>
+                setSelectedWizard({
+                  ...objectMap(selectedWizard, (x) => ({
+                    selected: false,
+                    disabled: x.disabled,
+                  })),
+                  2: { selected: true, disabled: false },
+                })
+              }
+            >
+              Continue to Configure Suggested Constraints
+            </Button>
+            <Button icon="opportunity" onClick={() => navigate('/sunburst')}>
+              Jump to Visualization
+            </Button>
+          </FlexBox>
+        </>
       </WizardStep>
       <WizardStep
         icon="hint"
@@ -214,16 +212,11 @@ const EventlogConfig = ({
         data-step={'2'}
       >
         <Title>2. Configure Suggested Constraints</Title>
-        <Label wrappingType={WrappingType.None}>
-          Integer pellentesque leo sit amet dui vehicula, quis ullamcorper est
-          pulvinar. Nam in libero sem. Suspendisse arcu metus, molestie a turpis
-          a, molestie aliquet dui. Donec ppellentesque leo sit amet dui
-          vehicula, quis ullamcorper est pulvinar. Nam in libero sem.
-          Suspendisse arcu metus, molestie a turpis a, molestie aliquet dui.
-          Donec pulvinar, sapien corper eu, posuere malesuada nisl. Integer
-          pellentesque leo sit amet dui vehicula, quis ullamcorper est pulvinar.
-          Nam in libero sem. Suspendisse arcu metus, molestie a turpis a,
-          molestie aliquet dui. Donec pulvinar, sapien
+        <Label wrappingType={WrappingType.Normal}>
+          Here, you can filter constraints that may not be interesting for your
+          further conformance checking. Since this is still a static
+          application, this would not have an impact on the generated
+          constraints currently.
         </Label>
         {constraintData ? (
           <SuggestedConstraintsTable
@@ -236,24 +229,26 @@ const EventlogConfig = ({
             deleteSelected={deleteSelected}
           />
         ) : null}
-        <br />
-        <Button
-          design={ButtonDesign.Emphasized}
-          onClick={() =>
-            setSelectedWizard({
-              ...objectMap(selectedWizard, (x) => ({
-                selected: false,
-                disabled: x.disabled,
-              })),
-              3: { selected: true, disabled: false },
-            })
-          }
-        >
-          Continue to Violated Constraints
-        </Button>
-        <Button icon="opportunity" onClick={() => navigate('/sunburst')}>
-          Continue to Visualization
-        </Button>
+        <div style={{ margin: 10 }} />
+        <FlexBox justifyContent="SpaceBetween">
+          <Button
+            design={ButtonDesign.Emphasized}
+            onClick={() =>
+              setSelectedWizard({
+                ...objectMap(selectedWizard, (x) => ({
+                  selected: false,
+                  disabled: x.disabled,
+                })),
+                3: { selected: true, disabled: false },
+              })
+            }
+          >
+            Continue to Violated Constraints
+          </Button>
+          <Button icon="opportunity" onClick={() => navigate('/sunburst')}>
+            Jump to Visualization
+          </Button>
+        </FlexBox>
       </WizardStep>
       <WizardStep
         icon="lead"
@@ -263,16 +258,10 @@ const EventlogConfig = ({
         data-step={'3'}
       >
         <Title>3. Violated Constraints</Title>
-        <Label wrappingType={WrappingType.None}>
-          Integer pellentesque leo sit amet dui vehicula, quis ullamcorper est
-          pulvinar. Nam in libero sem. Suspendisse arcu metus, molestie a turpis
-          a, molestie aliquet dui. Donec ppellentesque leo sit amet dui
-          vehicula, quis ullamcorper est pulvinar. Nam in libero sem.
-          Suspendisse arcu metus, molestie a turpis a, molestie aliquet dui.
-          Donec pulvinar, sapien corper eu, posuere malesuada nisl. Integer
-          pellentesque leo sit amet dui vehicula, quis ullamcorper est pulvinar.
-          Nam in libero sem. Suspendisse arcu metus, molestie a turpis a,
-          molestie aliquet dui. Donec pulvinar, sapien
+        <Label wrappingType={WrappingType.Normal}>
+          This is your first interaction with the violated constraints. You can
+          pre-filter them based on the given attributes to enhance your
+          conformance checking investigation.
         </Label>
         {resultData ? (
           <ViolatedConstraintsTable
@@ -285,20 +274,25 @@ const EventlogConfig = ({
             selectedOutputRows={selectedOutputRows}
           />
         ) : null}
-        <br />
-        <FlexBox>
+        <div style={{ margin: 10 }} />
+        <FlexBox justifyContent="SpaceBetween">
           <Button
             icon="reset"
             onClick={() => setResultData(originalResultData)}
           >
             Reset Violated Constraints
           </Button>
-          <br />
           <Button
             icon="opportunity"
             onClick={() => navigate('/deleted-constraints-table')}
           >
             Show Diff
+          </Button>
+          <Button
+            icon="opportunity"
+            onClick={() => navigate('/unmapped-constraints-table')}
+          >
+            Show Unmapped
           </Button>
           <Button icon="opportunity" onClick={() => navigate('/sunburst')}>
             Continue to Visualization

@@ -2,15 +2,14 @@
 import { useEffect, useState, useCallback } from 'react';
 import {
   Button,
-  DynamicPageHeader,
   DynamicPage,
   DynamicPageTitle,
   Title,
-  FlexBox,
   Label,
   Badge,
+  FlexBox,
 } from '@ui5/webcomponents-react';
-import { Route, Routes, useNavigate } from 'react-router-dom';
+import { Route, Routes, useNavigate, useLocation } from 'react-router-dom';
 import '@ui5/webcomponents-icons/dist/AllIcons.js';
 import {
   isNil,
@@ -23,7 +22,7 @@ import {
 } from 'lodash';
 import reduceToSankeyArray from './SankeyChart/reduceToSankeyArray';
 import Plot from 'react-plotly.js';
-import { deleteSelected, colors, findLabel } from './util';
+import { deleteSelected, colors, findLabel, sankeyColors } from './util';
 import {
   findFaultyEventFromFaultyEventsArray,
   reduceFaultyEventsArray,
@@ -39,8 +38,10 @@ import EventVariantsDisplay from './EventVariantsDisplay';
 import EventLevelConstraintsDialog from './EventLevelConstraintsDialog';
 import DeletedConstraintsTable from './DeletedConstraintsTable';
 import fetchFiles from './fetchFile';
+import UnmappedConstraintsTable from './UnmappedConstraintsTable';
 
 const ConformanceCheckingSection = () => {
+  const { pathname } = useLocation();
   const navigate = useNavigate();
 
   const [csvRecommendationData, setCsvRecommendationData] = useState([]);
@@ -54,6 +55,7 @@ const ConformanceCheckingSection = () => {
   const [originalResultData, setOriginalResultData] = useState([]);
   const [originalVariantData, setOriginalVariantData] = useState(data2);
   const [diffData, setDiffData] = useState([]);
+  const [unmappedData, setUnmappedData] = useState([]);
 
   const [selectedInputRows, setSelectedInputRows] = useState([]);
   const [selectedOutputRows, setSelectedOutputRows] = useState([]);
@@ -165,6 +167,19 @@ const ConformanceCheckingSection = () => {
           (x, y) => x.obs_id === y.obs_id
         )
       );
+
+      setUnmappedData(
+        differenceWith(
+          originalResultData,
+          enhancedRows
+            .map((x) => x.faultyEventsFromVariant)
+            .flat()
+            .map((x) => x.reason)
+            .flat(),
+          (x, y) => x.obs_id === y.obs_id
+        )
+      );
+
       setSunburstData(
         sunburstOptions({
           data: newData.data,
@@ -176,22 +191,21 @@ const ConformanceCheckingSection = () => {
 
   const markNavigatedInputRow = useCallback(
     (row) => {
-      return selectedInputRows?.find((x) => x.id === row.id);
+      return selectedInputRows?.find((x) => x?.id === row?.id);
     },
     [selectedInputRows]
   );
 
   const markNavigatedOutputRow = useCallback(
     (row) => {
-      return selectedOutputRows?.find((x) => x.id === row.id);
+      return selectedOutputRows?.find((x) => x?.id === row?.id);
     },
     [selectedOutputRows]
   );
 
   const [ignoreConstraint, setIgnoreConstraint] = useState([]);
-
   return (
-    <div style={{ height: '100%', width: '100%', margin: 0, padding: 0 }}>
+    <>
       <EventLevelConstraintsDialog
         dialogIsOpen={dialogIsOpen}
         setDialogIsOpen={setDialogIsOpen}
@@ -203,57 +217,69 @@ const ConformanceCheckingSection = () => {
         resultData={resultData}
       />
       <DynamicPage
-        headerContent={
-          <DynamicPageHeader>
-            <FlexBox wrap="Wrap">
-              <FlexBox direction="Column">
-                <Label>(a SAP Signavio Evaluation)</Label>
-              </FlexBox>
-              <span style={{ width: '1rem' }} />
-            </FlexBox>
-          </DynamicPageHeader>
-        }
+        alwaysShowContentHeader
+        style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          width: '100%',
+          height: '100%',
+        }}
+        showHideHeaderButton={false}
+        headerContentPinnable={false}
         headerTitle={
           <DynamicPageTitle
             actions={
               <>
-                <Button onClick={() => navigate('/')} design="Emphasized">
-                  Configuration
-                </Button>
+                {pathname !== '/' && (
+                  <>
+                    <Button onClick={() => navigate('/')} design="Emphasized">
+                      Configuration
+                    </Button>
+                  </>
+                )}
               </>
             }
             header={<Title>VISCOSE</Title>}
             subHeader={
               <>
-                <Badge
-                  style={{ width: 200 }}
-                  onClick={() => navigate('/variants')}
-                >
-                  Variants: {variantData?.length}
-                </Badge>
-                <Badge
-                  style={{ width: 200 }}
-                  onClick={() => navigate('/table')}
-                >
-                  Constraints: {resultData?.length}
-                </Badge>
+                <Label>
+                  Visualization of declarative Conformance Checking (an SAP
+                  Signavio Evaluation)
+                </Label>
                 <br />
-                <Badge
-                  style={{ width: 200 }}
-                  onClick={() => navigate('/variants')}
-                >
-                  Deleted Variants:
-                  {originalVariantData?.length - variantData?.length}
-                </Badge>
-                <Badge
-                  style={{ width: 200 }}
-                  onClick={() => navigate('/deleted-constraints-table')}
-                >
-                  Deleted Constraints:
-                  {originalResultData?.length - resultData?.length}
-                </Badge>
                 <br />
-                <Label>Visualization of declarative Conformance Checking</Label>
+                {pathname !== '/' && (
+                  <div>
+                    <Badge
+                      style={{ width: 200 }}
+                      onClick={() => navigate('/variants')}
+                    >
+                      Variants: {variantData?.length}
+                    </Badge>
+                    <Badge
+                      style={{ width: 200 }}
+                      onClick={() => navigate('/table')}
+                    >
+                      Constraints: {resultData?.length}
+                    </Badge>
+                    <br />
+                    <Badge
+                      style={{ width: 200 }}
+                      onClick={() => navigate('/variants')}
+                    >
+                      Deleted Variants:
+                      {originalVariantData?.length - variantData?.length}
+                    </Badge>
+                    <Badge
+                      style={{ width: 200 }}
+                      onClick={() => navigate('/deleted-constraints-table')}
+                    >
+                      Deleted Constraints:
+                      {originalResultData?.length - resultData?.length}
+                    </Badge>
+                  </div>
+                )}
               </>
             }
           ></DynamicPageTitle>
@@ -293,27 +319,43 @@ const ConformanceCheckingSection = () => {
                 <div
                   style={{
                     display: 'flex',
-                    justifyContent: 'space-between',
+                    justifyContent: 'center',
+                    alignItems: 'center',
                     marginBottom: 20,
                   }}
                 >
-                  <Title style={{ width: 300 }}>(select event on click)</Title>
                   {colors.map(({ color, text }) => (
                     <span
                       key={color}
                       style={{
                         padding: 8,
                         backgroundColor: color,
-                        width: '200px',
-                        height: '50px',
+                        width: 100,
+                        height: 50,
                         display: 'inline-block',
                         color: 'black',
                         textAlign: 'center',
+                        fontSize: 12,
                       }}
                     >
                       {text}
                     </span>
                   ))}
+                  <span
+                    key={'white'}
+                    style={{
+                      padding: 8,
+                      backgroundColor: 'white',
+                      width: 100,
+                      height: 50,
+                      display: 'inline-block',
+                      color: 'black',
+                      textAlign: 'center',
+                      fontSize: 12,
+                    }}
+                  >
+                    select event on click
+                  </span>
                 </div>
                 <EventVariantsDisplay
                   originalVariantData={originalVariantData}
@@ -338,9 +380,7 @@ const ConformanceCheckingSection = () => {
                     alignItems: 'center',
                     flexDirection: 'row-reverse',
                   }}
-                >
-                  <Button design="Transparent" icon="full-screen" />
-                </div>
+                ></div>
                 {resultData ? (
                   <ViolatedConstraintsTable
                     onRowSelect={onRowSelect}
@@ -352,6 +392,27 @@ const ConformanceCheckingSection = () => {
                     selectedOutputRows={selectedOutputRows}
                   />
                 ) : null}
+                <div style={{ margin: 10 }} />
+                <FlexBox justifyContent="SpaceBetween">
+                  <Button
+                    icon="reset"
+                    onClick={() => setResultData(originalResultData)}
+                  >
+                    Reset Violated Constraints
+                  </Button>
+                  <Button
+                    icon="opportunity"
+                    onClick={() => navigate('/deleted-constraints-table')}
+                  >
+                    Show Diff
+                  </Button>
+                  <Button
+                    icon="opportunity"
+                    onClick={() => navigate('/unmapped-constraints-table')}
+                  >
+                    Show Unmapped
+                  </Button>
+                </FlexBox>
               </>
             }
           />
@@ -367,9 +428,7 @@ const ConformanceCheckingSection = () => {
                     alignItems: 'center',
                     flexDirection: 'row-reverse',
                   }}
-                >
-                  <Button design="Transparent" icon="full-screen" />
-                </div>
+                ></div>
                 {resultData ? (
                   <DeletedConstraintsTable
                     onRowSelect={onRowSelect}
@@ -382,6 +441,64 @@ const ConformanceCheckingSection = () => {
                     selectedOutputRows={selectedOutputRows}
                   />
                 ) : null}
+                <div style={{ margin: 10 }} />
+                <FlexBox justifyContent="SpaceBetween">
+                  <Button
+                    icon="reset"
+                    onClick={() => setResultData(originalResultData)}
+                  >
+                    Reset Violated Constraints
+                  </Button>
+                  <Button icon="opportunity" onClick={() => navigate('/table')}>
+                    Show Current
+                  </Button>
+                  <Button
+                    icon="opportunity"
+                    onClick={() => navigate('/unmapped-constraints-table')}
+                  >
+                    Show Unmapped
+                  </Button>
+                </FlexBox>
+              </>
+            }
+          />
+          <Route
+            path="/unmapped-constraints-table"
+            element={
+              <>
+                <ChartBar />
+                <div
+                  style={{
+                    height: '100%',
+                    display: 'flex',
+                    alignItems: 'center',
+                    flexDirection: 'row-reverse',
+                  }}
+                ></div>
+                {resultData ? (
+                  <UnmappedConstraintsTable
+                    onRowSelect={onRowSelect}
+                    deleteSelected={deleteSelected}
+                    markNavigatedOutputRow={markNavigatedOutputRow}
+                    setSelectedOutputRows={setSelectedOutputRows}
+                    setResultData={setResultData}
+                    resultData={resultData}
+                    unmappedData={unmappedData}
+                    selectedOutputRows={selectedOutputRows}
+                  />
+                ) : null}
+                <div style={{ margin: 10 }} />
+                <FlexBox justifyContent="SpaceBetween">
+                  <Button
+                    icon="opportunity"
+                    onClick={() => navigate('/deleted-constraints-table')}
+                  >
+                    Show Diff
+                  </Button>
+                  <Button icon="opportunity" onClick={() => navigate('/table')}>
+                    Show Current
+                  </Button>
+                </FlexBox>
               </>
             }
           />
@@ -406,119 +523,156 @@ const ConformanceCheckingSection = () => {
                 <div
                   style={{
                     display: 'flex',
-                    justifyContent: 'space-between',
+                    justifyContent: 'space-around',
+                    alignItems: 'center',
                     marginBottom: 20,
                   }}
                 >
-                  <Title style={{ width: 300 }}>(select event on click)</Title>
-                  {colors.map(({ color, text }) => (
+                  <div
+                    style={{
+                      display: 'flex',
+                      justifyContent: 'center',
+                      alignItems: 'center',
+                      flexDirection: 'column',
+                      marginBottom: 20,
+                    }}
+                  >
+                    {sankeyColors.map(({ color, text }) => (
+                      <span
+                        key={color}
+                        style={{
+                          padding: 8,
+                          backgroundColor: color,
+                          width: 100,
+                          height: 50,
+                          display: 'inline-block',
+                          color: 'black',
+                          textAlign: 'center',
+                          fontSize: 12,
+                        }}
+                      >
+                        {text}
+                      </span>
+                    ))}
                     <span
-                      key={color}
+                      key={'white'}
                       style={{
                         padding: 8,
-                        backgroundColor: color,
-                        width: '200px',
-                        height: '50px',
+                        backgroundColor: 'white',
+                        width: 100,
+                        height: 50,
                         display: 'inline-block',
                         color: 'black',
                         textAlign: 'center',
+                        fontSize: 12,
                       }}
                     >
-                      {text}
+                      select event on click
                     </span>
-                  ))}
-                  <Button design="Transparent" icon="full-screen" />
-                </div>
-                <Plot
-                  onClick={({ points }) => {
-                    if (isNil(points[0]?.customdata)) {
-                      return;
-                    }
-                    setRightClickInfo({
-                      name: points[0].label,
-                      reason: tail(points[0].customdata.split('<br>'))
-                        .filter((x) => !isEmpty(x))
-                        .map((x) => ({
-                          reason: x,
-                          obs_id: find(
-                            find(faultyEvents, { faultyEvent: points[0].label })
-                              ?.reason,
-                            { reason: x }
-                          )?.obs_id,
-                        })),
-                    });
-                    setDialogIsOpen(true);
-                  }}
-                  data={[
-                    {
-                      type: 'sankey',
-                      orientation: 'h',
-                      arrangement: 'fixed',
-                      node: {
-                        pad: 15,
-                        thickness: 30,
-                        line: {
-                          color: 'black',
-                          width: 0.5,
-                        },
-                        customdata: data.map((dataPoint) => {
-                          const faultyEvent = find(
-                            uniqBy(faultyEvents, 'faultyEvent'),
-                            {
-                              faultyEvent: dataPoint.name,
-                            }
-                          );
-                          if (!isNil(faultyEvent)) {
-                            return (
-                              dataPoint.name +
-                              '<br>' +
-                              faultyEvent.reason
-                                ?.map((dataPoint) => dataPoint.reason)
-                                .join('<br>') +
-                              '<br>'
+                  </div>
+                  <Plot
+                    onClick={({ points }) => {
+                      if (isNil(points[0]?.customdata)) {
+                        return;
+                      }
+                      setRightClickInfo({
+                        name: points[0].label,
+                        reason: tail(points[0].customdata.split('<br>'))
+                          .filter((x) => !isEmpty(x))
+                          .map((x) => {
+                            const currentRow = find(
+                              find(faultyEvents, {
+                                faultyEvent: points[0].label,
+                              })?.reason,
+                              { reason: x }
                             );
-                          }
-                          return dataPoint.name + '<br>';
-                        }),
-                        metadata: data,
-                        hovertemplate:
-                          'occurred: %{value} times %{customdata} <b></b><extra></extra>',
-                        label: data.map((x) => x.name),
-                        color: data.map((x) => {
-                          const a = find(uniqBy(faultyEvents, 'faultyEvent'), {
-                            faultyEvent: x.name,
-                          });
-                          if (!isNil(a)) {
-                            return a.level === 'faulty' ? 'red' : 'orange';
-                          }
-                          return 'green';
-                        }),
-                      },
+                            return {
+                              reason: currentRow?.reason,
+                              obs_id: currentRow?.obs_id,
+                              num_violations: currentRow?.num_violations,
+                              Object: currentRow?.Object,
+                              template: currentRow?.template,
+                              Level: currentRow?.Level,
+                              relevance_score: currentRow?.relevance_score,
+                            };
+                          }),
+                      });
+                      setDialogIsOpen(true);
+                    }}
+                    data={[
+                      {
+                        type: 'sankey',
+                        orientation: 'h',
+                        arrangement: 'fixed',
+                        node: {
+                          pad: 15,
+                          thickness: 30,
+                          line: {
+                            color: 'black',
+                            width: 0.5,
+                          },
+                          customdata: data.map((dataPoint) => {
+                            const faultyEvent = find(
+                              uniqBy(faultyEvents, 'faultyEvent'),
+                              {
+                                faultyEvent: dataPoint.name,
+                              }
+                            );
+                            if (!isNil(faultyEvent)) {
+                              return (
+                                dataPoint.name +
+                                '<br>' +
+                                faultyEvent.reason
+                                  ?.map((dataPoint) => dataPoint.reason)
+                                  .join('<br>') +
+                                '<br>'
+                              );
+                            }
+                            return dataPoint.name + '<br>';
+                          }),
+                          metadata: data,
+                          hovertemplate:
+                            'occurred: %{value} times %{customdata} <b></b><extra></extra>',
+                          label: data.map((x) => x.name),
+                          color: data.map((x) => {
+                            const a = find(
+                              uniqBy(faultyEvents, 'faultyEvent'),
+                              {
+                                faultyEvent: x.name,
+                              }
+                            );
+                            if (!isNil(a)) {
+                              return a.level === 'faulty' ? 'red' : 'orange';
+                            }
+                            return 'green';
+                          }),
+                        },
 
-                      link: {
-                        source,
-                        target,
-                        value,
+                        link: {
+                          source,
+                          target,
+                          value,
+                        },
                       },
-                    },
-                  ]}
-                  layout={{
-                    width: 1200,
-                    height: 800,
-                    title: 'Sankey Plot of Events',
-                    tooltip: {
-                      // Edit the tooltip here
-                      text: 'Tooltip title',
-                    },
-                  }}
-                />
-                <br />
+                    ]}
+                    layout={{
+                      width: 1250,
+                      height: 600,
+                      title: 'Sankey Plot of Events',
+                      tooltip: {
+                        // Edit the tooltip here
+                        text: 'Tooltip title',
+                      },
+                    }}
+                  />
+                  <br />
+                </div>
               </>
             }
           />
         </Routes>
       </DynamicPage>
-    </div>
+    </>
   );
 };
 

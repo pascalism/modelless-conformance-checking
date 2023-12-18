@@ -2,16 +2,17 @@ import { AnalyticalTable, Button } from '@ui5/webcomponents-react';
 
 import { isNil } from 'lodash';
 
-const DeletedConstraintsTable = ({
+// TODO: DELETE ALL, DELETE
+const UnmappedConstraintsTable = ({
   onRowSelect,
   markNavigatedOutputRow,
   setSelectedOutputRows,
   setResultData,
   resultData,
-  diffData,
+  unmappedData,
   //   selectedOutputRows,
 }) => {
-  return !isNil(diffData) ? (
+  return !isNil(unmappedData) ? (
     <>
       <AnalyticalTable
         minRows={9}
@@ -60,35 +61,10 @@ const DeletedConstraintsTable = ({
             accessor: 'num_violations',
             headerTooltip: 'num_violations',
           },
-          {
-            Cell: (instance) => {
-              const { row, webComponentsReactProperties } = instance;
-              // disable buttons if overlay is active to prevent focus
-              const isOverlay = webComponentsReactProperties.showOverlay;
-              // console.log('This is your row data', row.original);
-              const onDelete = () => {
-                const rows = row.original
-                  ? [row.original]
-                  : row.leafRows.map((x) => x.original);
-                setResultData([...resultData, ...rows]);
-              };
-              return (
-                <Button icon="add" disabled={isOverlay} onClick={onDelete} />
-              );
-            },
-            width: 50,
-            Header: '',
-            accessor: '.',
-            disableFilters: true,
-            disableGroupBy: true,
-            disableResizing: true,
-            disableSortBy: true,
-            id: 'actions',
-          },
         ]}
-        data={diffData}
+        data={unmappedData}
       />
     </>
   ) : null;
 };
-export default DeletedConstraintsTable;
+export default UnmappedConstraintsTable;

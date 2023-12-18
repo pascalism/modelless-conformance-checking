@@ -25,9 +25,37 @@ const EventLevelConstraintsDialog = ({
         data={rightClickInfo?.reason}
         columns={[
           {
+            Header: 'Relevance',
+            accessor: 'relevance_score',
+            width: 50,
+            headerTooltip: 'relevance_score',
+          },
+          {
+            Header: 'Level',
+            accessor: 'Level',
+            width: 100,
+            headerTooltip: 'Level of the Constraint',
+          },
+          {
+            Header: 'Object',
+            accessor: 'Object',
+            headerTooltip: 'Concerning Object',
+          },
+          {
             Header: 'Constraint',
             accessor: 'reason',
             headerTooltip: 'reason',
+          },
+          {
+            Header: 'Kind',
+            accessor: 'template',
+            headerTooltip: 'template',
+          },
+          {
+            Header: '# occurred',
+            accessor: 'num_violations',
+            headerTooltip: 'num_violations',
+            width: 60,
           },
           {
             Cell: (instance) => {

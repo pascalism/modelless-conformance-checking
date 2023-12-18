@@ -1,5 +1,4 @@
 import { isNil, isEmpty, find, indexOf, uniqBy, tail } from 'lodash';
-import { Button, Title } from '@ui5/webcomponents-react';
 import Plot from 'react-plotly.js';
 
 const SankeyChart = ({
@@ -84,10 +83,6 @@ const SankeyChart = ({
 
   return (
     <>
-      <div>
-        <Title>(select event on click)</Title>
-        <Button design="Transparent" icon="full-screen" />
-      </div>
       <Plot
         onClick={({ points }) => {
           if (isNil(points[0]?.customdata)) {
@@ -97,13 +92,21 @@ const SankeyChart = ({
             name: points[0].label,
             reason: tail(points[0].customdata.split('<br>'))
               .filter((x) => !isEmpty(x))
-              .map((x) => ({
-                reason: x,
-                obs_id: find(
+              .map((x) => {
+                const currentRow = find(
                   find(faultyEvents, { faultyEvent: points[0].label })?.reason,
                   { reason: x }
-                )?.obs_id,
-              })),
+                );
+                return {
+                  reason: currentRow?.nat_lang_template,
+                  obs_id: currentRow?.obs_id,
+                  num_violations: currentRow?.num_violations,
+                  Object: currentRow?.Object,
+                  template: currentRow?.template,
+                  Level: currentRow?.Level,
+                  relevance_score: currentRow?.relevance_score,
+                };
+              }),
           });
           setDialogIsOpen(true);
         }}

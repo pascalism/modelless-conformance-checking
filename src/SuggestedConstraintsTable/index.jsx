@@ -80,11 +80,6 @@ const SuggestedConstraintsTable = ({
             headerTooltip: 'left_op of the Constraint',
           },
           {
-            Header: 'Model Names',
-            accessor: 'model_name',
-            headerTooltip: 'model_id of the Constraint',
-          },
-          {
             Header: 'Natural Language',
             accessor: 'nat_lang_template',
             headerTooltip: 'nat_lang_template',
