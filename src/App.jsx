@@ -68,6 +68,7 @@ const ConformanceCheckingSection = () => {
   const [ignoreConstraint, setIgnoreConstraint] = useState([]);
   const [showOnlyNonConformant, setShowOnlyNonConformant] = useState(false);
   const [conformanceScore, setConformanceScore] = useState(0);
+  const [scoreInPercentage, setScoreInPercentage] = useState(true);
 
   useEffect(() => {
     fetchFiles(
@@ -274,8 +275,13 @@ const ConformanceCheckingSection = () => {
               <>
                 {pathname !== '/' && (
                   <>
-                    <Badge style={{ width: 250, height: 20 }}>
-                      Conformance Score: {conformanceScore}
+                    <Badge
+                      style={{ width: 250, height: 20, cursor: 'pointer' }}
+                      onClick={() => setScoreInPercentage(!scoreInPercentage)}
+                    >
+                      {scoreInPercentage
+                        ? `Conformance Score: ${conformanceScore * 100}%`
+                        : `Conformance Score: ${conformanceScore}`}
                     </Badge>
                     <Button onClick={() => navigate('/')} design="Emphasized">
                       Configuration
@@ -297,27 +303,27 @@ const ConformanceCheckingSection = () => {
                   <>
                     <div>
                       <Badge
-                        style={{ width: 200, margin: 2 }}
+                        style={{ width: 200, margin: 2, cursor: 'pointer' }}
                         onClick={() => navigate('/variants')}
                       >
                         Variants: {variantData?.length}
                       </Badge>
                       <Badge
-                        style={{ width: 200, margin: 2 }}
+                        style={{ width: 200, margin: 2, cursor: 'pointer' }}
                         onClick={() => navigate('/table')}
                       >
                         Constraints: {resultData?.length}
                       </Badge>
                       <br />
                       <Badge
-                        style={{ width: 200, margin: 2 }}
+                        style={{ width: 200, margin: 2, cursor: 'pointer' }}
                         onClick={() => navigate('/variants')}
                       >
                         Deleted Variants:
                         {originalVariantData?.length - variantData?.length}
                       </Badge>
                       <Badge
-                        style={{ width: 200, margin: 2 }}
+                        style={{ width: 200, margin: 2, cursor: 'pointer' }}
                         onClick={() => navigate('/deleted-constraints-table')}
                       >
                         Deleted Constraints:
