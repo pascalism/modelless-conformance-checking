@@ -14,38 +14,36 @@ const ChartBar = () => {
         marginBottom: 20,
       }}
     >
-      <div>
-        <SegmentedButton>
-          <SegmentedButtonItem
-            active={pathname === '/sunburst'}
-            icon="donut-chart"
-            onClick={() => navigate('/sunburst')}
-          >
-            Sunburst
-          </SegmentedButtonItem>
-          <SegmentedButtonItem
-            active={pathname === '/variants'}
-            icon=""
-            onClick={() => navigate('/variants')}
-          >
-            Variant View
-          </SegmentedButtonItem>
-          <SegmentedButtonItem
-            active={pathname === '/sankey'}
-            icon="opportunity"
-            onClick={() => navigate('/sankey')}
-          >
-            Sankey
-          </SegmentedButtonItem>
-          <SegmentedButtonItem
-            active={pathname === '/table'}
-            icon="table-view"
-            onClick={() => navigate('/table')}
-          >
-            Table View
-          </SegmentedButtonItem>
-        </SegmentedButton>
-      </div>
+      <SegmentedButton mode="SingleSelect">
+        <SegmentedButtonItem
+          active={pathname === '/sunburst'}
+          icon="donut-chart"
+          onClick={() => navigate('/sunburst')}
+        >
+          Sunburst Chart
+        </SegmentedButtonItem>
+        <SegmentedButtonItem
+          active={pathname === '/variants'}
+          icon=""
+          onClick={() => navigate('/variants')}
+        >
+          Variant Explorer
+        </SegmentedButtonItem>
+        <SegmentedButtonItem
+          active={pathname === '/sankey'}
+          icon="opportunity"
+          onClick={() => navigate('/sankey')}
+        >
+          Sankey Chart
+        </SegmentedButtonItem>
+        <SegmentedButtonItem
+          active={pathname === '/table'}
+          icon="table-view"
+          onClick={() => navigate('/table')}
+        >
+          Table View
+        </SegmentedButtonItem>
+      </SegmentedButton>
     </div>
   );
 };
