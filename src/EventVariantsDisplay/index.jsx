@@ -6,7 +6,6 @@ import {
   Card,
   ToolbarSelect,
   ToolbarSelectOption,
-  Text,
   CardHeader,
   Button,
   ToolbarV2,
@@ -28,6 +27,8 @@ const findColor = (level) => {
 };
 
 const EventVariantsDisplay = ({
+  showOnlyNonConformant,
+  setShowOnlyNonConformant,
   newData,
   setRightClickInfo,
   setDialogIsOpen,
@@ -35,8 +36,6 @@ const EventVariantsDisplay = ({
   originalVariantData,
   variantData,
 }) => {
-  const [showOnlyNonConformant, setShowOnlyNonConformant] = useState(false);
-
   const chartData = newData
     ?.map(({ events, measure, isFaulty, faultyEventsFromVariant }) => {
       return {
@@ -71,8 +70,24 @@ const EventVariantsDisplay = ({
         }}
       >
         <ToolbarSelect
-          onChange={() => {
-            setShowOnlyNonConformant(!showOnlyNonConformant);
+          onChange={(x) => {
+            console.log(
+              x.detail.selectedOption.innerText === 'Show only non-conformant'
+            );
+            setShowOnlyNonConformant(
+              x.detail.selectedOption.innerText === 'Show only non-conformant'
+            );
+            if (
+              x.detail.selectedOption.innerText === 'Show only non-conformant'
+            ) {
+              setVariantData(
+                chartData
+                  .filter((x) => x.isFaulty)
+                  .map((x) => [...x.events.map((x) => x.eventName), x.measure])
+              );
+            } else {
+              setVariantData(originalVariantData);
+            }
           }}
         >
           <ToolbarSelectOption selected={!showOnlyNonConformant}>
@@ -83,37 +98,63 @@ const EventVariantsDisplay = ({
           </ToolbarSelectOption>
         </ToolbarSelect>
         <ToolbarButton
-          onClick={() => setVariantData(originalVariantData)}
+          onClick={() => {
+            setVariantData(originalVariantData);
+            setShowOnlyNonConformant(false);
+          }}
           text=" Reset Variants"
         />
       </ToolbarV2>
 
       <div
         style={{
-          overflowX: 'auto',
-          whiteSpace: 'nowrap',
           height: '100%',
+          overflowY: 'auto',
+          //   border: '1px solid #ccc',
+          padding: '10px',
         }}
       >
         {chartData.map((variant, index) => (
           <div key={index}>
             <Card
               header={
-                <CardHeader
-                  style={{ color: 'black' }}
-                  titleText={`Occurrence: ${variant.measure}`}
-                />
+                <FlexBox justifyContent="SpaceBetween">
+                  <CardHeader
+                    style={{ color: 'black' }}
+                    titleText={`Occurrence: ${variant.measure}, # of Events: ${variant.events.length}`}
+                  />
+
+                  <Button
+                    icon="delete"
+                    style={{ margin: 10 }}
+                    onClick={() => {
+                      setVariantData(
+                        variantData.filter(
+                          (y) =>
+                            !isEqual(
+                              y,
+                              [
+                                variant.events.map((x) => x.eventName),
+                                variant.measure,
+                              ].flat()
+                            )
+                        )
+                      );
+                    }}
+                  >
+                    Delete Variant
+                  </Button>
+                </FlexBox>
               }
               style={{
                 width: '95%',
                 margin: '8px',
-                minHeight: 50,
+                // minHeight: 100,
               }}
             >
               <FlexBox
                 key={index}
                 style={{
-                  height: 200,
                   padding: 5,
                   overflowX: 'auto',
                   whiteSpace: 'nowrap',
@@ -124,45 +165,25 @@ const EventVariantsDisplay = ({
                     <TimelineItem
                       nameClickable
                       onNameClick={() => {
-                        setRightClickInfo(event);
+                        setRightClickInfo({
+                          name: event.eventName,
+                          reason: event.reason,
+                        });
                         setDialogIsOpen(true);
                       }}
+                      label={event.eventName}
                       name={event.eventName}
+                      aria-label={event.eventName}
+                      title={event.eventName}
                       key={eventIndex}
                       style={{
                         width: 200,
-                        margin: '8px',
+                        height: 80,
                         background: findColor(event.level),
                       }}
                     />
                   ))}
                 </Timeline>
-              </FlexBox>
-              <FlexBox
-                style={{
-                  justifyContent: 'flex-end',
-                }}
-              >
-                <Button
-                  icon="delete"
-                  style={{ margin: 10 }}
-                  onClick={() => {
-                    setVariantData(
-                      variantData.filter(
-                        (y) =>
-                          !isEqual(
-                            y,
-                            [
-                              variant.events.map((x) => x.eventName),
-                              variant.measure,
-                            ].flat()
-                          )
-                      )
-                    );
-                  }}
-                >
-                  Delete Variant
-                </Button>
               </FlexBox>
             </Card>
           </div>

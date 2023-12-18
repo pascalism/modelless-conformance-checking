@@ -20,18 +20,18 @@ const ViolatedConstraintsTable = ({
   selectedOutputRows,
 }) => {
   const [relevanceScoreFilter, setRelevanceScoreFilter] = useState('0.5');
+
   return !isNil(resultData) ? (
     <>
       <AnalyticalTable
         minRows={9}
-        maxRows={10}
+        visibleRows={9}
         markNavigatedRow={markNavigatedOutputRow}
         groupable
         scaleWidthMode="Smart"
         filterable
         selectionMode="MultiSelect"
         onRowSelect={(e) => onRowSelect(e, setSelectedOutputRows)}
-        visibleRows="10"
         columns={[
           {
             Header: 'Relevance',
@@ -123,17 +123,18 @@ const ViolatedConstraintsTable = ({
             Header: 'Object',
             accessor: 'Object',
             headerTooltip: 'Concerning Object',
+            width: 100,
           },
           {
             Header: 'Natural Language',
             accessor: 'nat_lang_template',
             headerTooltip: 'nat_lang_template',
-            width: 500,
           },
           {
             Header: 'Kind',
             accessor: 'template',
             headerTooltip: 'template',
+            width: 100,
           },
           {
             Header: '# occurred',
@@ -146,7 +147,6 @@ const ViolatedConstraintsTable = ({
               const { row, webComponentsReactProperties } = instance;
               // disable buttons if overlay is active to prevent focus
               const isOverlay = webComponentsReactProperties.showOverlay;
-              // console.log('This is your row data', row.original);
               const onDelete = () => {
                 const rows = row.original
                   ? [row.original]

@@ -9,6 +9,8 @@ const SunburstChart = ({ sunburstData, setRightClickInfo, setDialogIsOpen }) =>
         justifyContent: 'space-around',
         alignItems: 'center',
         marginBottom: 20,
+        height: '100%',
+        width: '100%',
       }}
     >
       <div
@@ -55,15 +57,14 @@ const SunburstChart = ({ sunburstData, setRightClickInfo, setDialogIsOpen }) =>
       </div>
       <div
         style={{
-          display: 'flex',
-          justifyContent: 'center',
-          alignItems: 'center',
+          padding: '0 9px 9px',
+          width: 600,
+          height: 600,
         }}
       >
         <EchartsComponent
           onEvents={{
             contextmenu: ({ data, event }) => {
-              console.log(data);
               event.event.preventDefault();
               setRightClickInfo({
                 name: data.name,
@@ -73,8 +74,9 @@ const SunburstChart = ({ sunburstData, setRightClickInfo, setDialogIsOpen }) =>
             },
           }}
           style={{
-            height: 800,
-            width: 800,
+            padding: '0 9px 9px',
+            width: '100%',
+            height: '100%',
           }}
           option={sunburstData ? sunburstData : []}
           lazyUpdate

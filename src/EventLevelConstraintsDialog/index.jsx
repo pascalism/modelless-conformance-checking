@@ -1,4 +1,9 @@
-import { AnalyticalTable, Button, Dialog } from '@ui5/webcomponents-react';
+import {
+  AnalyticalTable,
+  Button,
+  Dialog,
+  FlexBox,
+} from '@ui5/webcomponents-react';
 import { without, find } from 'lodash';
 
 const EventLevelConstraintsDialog = ({
@@ -22,6 +27,8 @@ const EventLevelConstraintsDialog = ({
         groupable
         scaleWidthMode="Smart"
         filterable
+        minRows={14}
+        visibleRows={14}
         data={rightClickInfo?.reason}
         columns={[
           {
@@ -62,7 +69,6 @@ const EventLevelConstraintsDialog = ({
               const { row, webComponentsReactProperties } = instance;
               // disable buttons if overlay is active to prevent focus
               const isOverlay = webComponentsReactProperties.showOverlay;
-              // console.log('This is your row data', row.original);
               const onDelete = () => {
                 const rows = row.original
                   ? [row.original]
@@ -90,7 +96,8 @@ const EventLevelConstraintsDialog = ({
           },
         ]}
       />
-      <div style={{ marginBottom: 0 }}>
+      <div style={{ margin: 10 }} />
+      <FlexBox justifyContent="SpaceBetween">
         <Button
           onClick={() => {
             setDialogIsOpen(false);
@@ -113,7 +120,7 @@ const EventLevelConstraintsDialog = ({
         >
           Apply
         </Button>
-      </div>
+      </FlexBox>
     </Dialog>
   );
 };

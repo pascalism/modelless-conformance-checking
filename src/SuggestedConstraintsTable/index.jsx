@@ -20,8 +20,7 @@ const SuggestedConstraintsTable = ({
     <>
       <AnalyticalTable
         minRows={9}
-        maxRows={10}
-        visibleRows="10"
+        visibleRows={10}
         markNavigatedRow={markNavigatedInputRow}
         groupable
         scaleWidthMode="Smart"
@@ -90,7 +89,6 @@ const SuggestedConstraintsTable = ({
               const { row, webComponentsReactProperties } = instance;
               // disable buttons if overlay is active to prevent focus
               const isOverlay = webComponentsReactProperties.showOverlay;
-              // console.log('This is your row data', row.original);
               const onDelete = () => {
                 const rows = row.original
                   ? [row.original]

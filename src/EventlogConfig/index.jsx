@@ -13,6 +13,7 @@ import {
   FlexBox,
   Select,
   Option,
+  Link,
 } from '@ui5/webcomponents-react';
 import { objectMap } from '../util';
 import SuggestedConstraintsTable from '../SuggestedConstraintsTable';
@@ -21,6 +22,8 @@ import variant_array_short from '../variant_array_short';
 import variant_array_salesforce from '../variant_array_salesforce';
 import variant_array_bpichallenge from '../variant_array_bpichallenge';
 import fetchFile from '../fetchFile';
+import { differenceWith } from 'lodash';
+import ButtonMenu from '../ButtonMenu';
 
 const EventlogConfig = ({
   setVariantData,
@@ -41,6 +44,7 @@ const EventlogConfig = ({
   setOriginalVariantData,
   setCsvRecommendationData,
   setCsvResultData,
+  unmappedData,
 }) => {
   const [selectedWizard, setSelectedWizard] = useState({
     1: { selected: true, disabled: false },
@@ -121,6 +125,25 @@ const EventlogConfig = ({
       [e.detail.step.dataset.step]: { selected: true, disabled: false },
     });
   };
+  const menuActions = {
+    reset: () => setResultData(originalResultData),
+    unmapped: () => navigate('/unmapped-constraints-table'),
+    diff: () => navigate('/deleted-constraints-table'),
+    deleteUnmapped: () =>
+      setResultData(
+        differenceWith(
+          resultData,
+          unmappedData,
+          (x, y) => x.obs_id === y.obs_id
+        )
+      ),
+  };
+  const menuItems = [
+    { icon: 'reset', text: 'Reset Violated Constraints', key: 'reset' },
+    { icon: 'opportunity', text: 'Show Deleted Constraints', key: 'diff' },
+    { icon: 'opportunity', text: 'Show Unmapped', key: 'unmapped' },
+    { icon: 'delete', text: 'Delete Unmapped', key: 'deleteUnmapped' },
+  ];
 
   return (
     <Wizard
@@ -141,6 +164,16 @@ const EventlogConfig = ({
             Theoretically, here you would upload an Event log file to perform a
             modelless conformance check. Since this is currently a static
             application, you may choose between the pre-configured event logs.
+            <br />
+            The user flow follows the input and output of{' '}
+            <Link
+              target="_blank"
+              rel="noopener noreferrer"
+              href={'https://github.com/signavio/best-practice-conformance'}
+            >
+              https://github.com/signavio/best-practice-conformance
+            </Link>
+            .
           </Label>
           <br />
           <FileUploader hideInput style={{ margin: 20 }}>
@@ -263,6 +296,7 @@ const EventlogConfig = ({
           pre-filter them based on the given attributes to enhance your
           conformance checking investigation.
         </Label>
+        <ButtonMenu actions={menuActions} items={menuItems} />
         {resultData ? (
           <ViolatedConstraintsTable
             onRowSelect={onRowSelect}
@@ -275,25 +309,7 @@ const EventlogConfig = ({
           />
         ) : null}
         <div style={{ margin: 10 }} />
-        <FlexBox justifyContent="SpaceBetween">
-          <Button
-            icon="reset"
-            onClick={() => setResultData(originalResultData)}
-          >
-            Reset Violated Constraints
-          </Button>
-          <Button
-            icon="opportunity"
-            onClick={() => navigate('/deleted-constraints-table')}
-          >
-            Show Diff
-          </Button>
-          <Button
-            icon="opportunity"
-            onClick={() => navigate('/unmapped-constraints-table')}
-          >
-            Show Unmapped
-          </Button>
+        <FlexBox justifyContent="End">
           <Button icon="opportunity" onClick={() => navigate('/sunburst')}>
             Continue to Visualization
           </Button>

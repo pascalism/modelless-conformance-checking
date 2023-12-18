@@ -24,16 +24,18 @@ const DeletedConstraintsTable = ({
         visibleRows="10"
         columns={[
           {
-            Header: 'Relevance Score',
+            Header: 'Relevance',
             accessor: 'relevance_score',
+            width: 50,
             headerTooltip: 'relevance_score',
             disableGroupBy: true,
             defaultCanSort: true,
           },
           {
-            Header: () => <span>Level</span>,
+            Header: 'Level',
             selectionMode: 'SingleSelect',
             accessor: 'Level',
+            width: 100,
             headerTooltip: 'Level of the Constraint',
             disableFilters: false,
             disableGroupBy: false,
@@ -45,27 +47,33 @@ const DeletedConstraintsTable = ({
             headerTooltip: 'left_op of the Constraint',
           },
           {
+            Header: 'Object',
+            accessor: 'Object',
+            headerTooltip: 'Concerning Object',
+            width: 100,
+          },
+          {
             Header: 'Natural Language',
             accessor: 'nat_lang_template',
             headerTooltip: 'nat_lang_template',
-            width: 500,
           },
           {
             Header: 'Kind',
             accessor: 'template',
             headerTooltip: 'template',
+            width: 100,
           },
           {
             Header: '# occurred',
             accessor: 'num_violations',
             headerTooltip: 'num_violations',
+            width: 60,
           },
           {
             Cell: (instance) => {
               const { row, webComponentsReactProperties } = instance;
               // disable buttons if overlay is active to prevent focus
               const isOverlay = webComponentsReactProperties.showOverlay;
-              // console.log('This is your row data', row.original);
               const onDelete = () => {
                 const rows = row.original
                   ? [row.original]
