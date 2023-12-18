@@ -7,7 +7,7 @@ import {
   Title,
   Label,
   Badge,
-  FlexBox,
+  WrappingType,
 } from '@ui5/webcomponents-react';
 import { Route, Routes, useNavigate, useLocation } from 'react-router-dom';
 import '@ui5/webcomponents-icons/dist/AllIcons.js';
@@ -39,6 +39,7 @@ import EventLevelConstraintsDialog from './EventLevelConstraintsDialog';
 import DeletedConstraintsTable from './DeletedConstraintsTable';
 import fetchFiles from './fetchFile';
 import UnmappedConstraintsTable from './UnmappedConstraintsTable';
+import ButtonMenu from './ButtonMenu';
 
 const ConformanceCheckingSection = () => {
   const { pathname } = useLocation();
@@ -51,7 +52,7 @@ const ConformanceCheckingSection = () => {
   const [dialogIsOpen, setDialogIsOpen] = useState(false);
 
   const [constraintData, setConstraintData] = useState();
-  const [resultData, setResultData] = useState();
+  const [resultData, setResultData] = useState([]);
   const [originalResultData, setOriginalResultData] = useState([]);
   const [originalVariantData, setOriginalVariantData] = useState(data2);
   const [diffData, setDiffData] = useState([]);
@@ -62,6 +63,8 @@ const ConformanceCheckingSection = () => {
   const [sunburstData, setSunburstData] = useState([]);
   const [faultyEvents, setFaultyEvents] = useState([]);
   const [faultyVariants, setFaultyVariants] = useState([]);
+  const [ignoreConstraint, setIgnoreConstraint] = useState([]);
+  const [showOnlyNonConformant, setShowOnlyNonConformant] = useState(false);
 
   useEffect(() => {
     fetchFiles(
@@ -116,6 +119,7 @@ const ConformanceCheckingSection = () => {
     const resultData = csvResultData
       .map((row) => ({
         ...row,
+        relevance_score: Number.parseFloat(row.relevance_score).toFixed(5),
         left_op: findLabel(row, 'left'),
         right_op: findLabel(row, 'right'),
         subRows: row.model_name?.split('|').map((x) => ({ model: x })),
@@ -170,7 +174,7 @@ const ConformanceCheckingSection = () => {
 
       setUnmappedData(
         differenceWith(
-          originalResultData,
+          resultData,
           enhancedRows
             .map((x) => x.faultyEventsFromVariant)
             .flat()
@@ -203,7 +207,27 @@ const ConformanceCheckingSection = () => {
     [selectedOutputRows]
   );
 
-  const [ignoreConstraint, setIgnoreConstraint] = useState([]);
+  const menuActions = {
+    reset: () => setResultData(originalResultData),
+    unmapped: () => navigate('/unmapped-constraints-table'),
+    diff: () => navigate('/deleted-constraints-table'),
+    deleteUnmapped: () =>
+      setResultData(
+        differenceWith(
+          resultData,
+          unmappedData,
+          (x, y) => x.obs_id === y.obs_id
+        )
+      ),
+    current: () => navigate('/table'),
+  };
+  const menuItems = [
+    { icon: 'reset', text: 'Reset Violated Constraints', key: 'reset' },
+    { icon: 'opportunity', text: 'Show Deleted Constraints', key: 'diff' },
+    { icon: 'opportunity', text: 'Show Unmapped', key: 'unmapped' },
+    { icon: 'delete', text: 'Delete Unmapped', key: 'deleteUnmapped' },
+  ];
+
   return (
     <>
       <EventLevelConstraintsDialog
@@ -290,6 +314,7 @@ const ConformanceCheckingSection = () => {
             path="/"
             element={
               <EventlogConfig
+                unmappedData={unmappedData}
                 setVariantData={setVariantData}
                 navigate={navigate}
                 constraintData={constraintData}
@@ -358,6 +383,8 @@ const ConformanceCheckingSection = () => {
                   </span>
                 </div>
                 <EventVariantsDisplay
+                  showOnlyNonConformant={showOnlyNonConformant}
+                  setShowOnlyNonConformant={setShowOnlyNonConformant}
                   originalVariantData={originalVariantData}
                   variantData={variantData}
                   newData={faultyVariants}
@@ -381,38 +408,20 @@ const ConformanceCheckingSection = () => {
                     flexDirection: 'row-reverse',
                   }}
                 ></div>
+                <ButtonMenu actions={menuActions} items={menuItems} />
                 {resultData ? (
-                  <ViolatedConstraintsTable
-                    onRowSelect={onRowSelect}
-                    deleteSelected={deleteSelected}
-                    markNavigatedOutputRow={markNavigatedOutputRow}
-                    setSelectedOutputRows={setSelectedOutputRows}
-                    setResultData={setResultData}
-                    resultData={resultData}
-                    selectedOutputRows={selectedOutputRows}
-                  />
+                  <>
+                    <ViolatedConstraintsTable
+                      onRowSelect={onRowSelect}
+                      deleteSelected={deleteSelected}
+                      markNavigatedOutputRow={markNavigatedOutputRow}
+                      setSelectedOutputRows={setSelectedOutputRows}
+                      setResultData={setResultData}
+                      resultData={resultData}
+                      selectedOutputRows={selectedOutputRows}
+                    />
+                  </>
                 ) : null}
-                <div style={{ margin: 10 }} />
-                <FlexBox justifyContent="SpaceBetween">
-                  <Button
-                    icon="reset"
-                    onClick={() => setResultData(originalResultData)}
-                  >
-                    Reset Violated Constraints
-                  </Button>
-                  <Button
-                    icon="opportunity"
-                    onClick={() => navigate('/deleted-constraints-table')}
-                  >
-                    Show Diff
-                  </Button>
-                  <Button
-                    icon="opportunity"
-                    onClick={() => navigate('/unmapped-constraints-table')}
-                  >
-                    Show Unmapped
-                  </Button>
-                </FlexBox>
               </>
             }
           />
@@ -421,44 +430,25 @@ const ConformanceCheckingSection = () => {
             element={
               <>
                 <ChartBar />
-                <div
-                  style={{
-                    height: '100%',
-                    display: 'flex',
-                    alignItems: 'center',
-                    flexDirection: 'row-reverse',
-                  }}
-                ></div>
+                <Title>Deleted Constraints</Title>
+                <Label wrappingType={WrappingType.Normal}>
+                  These constraints were deleted and can be restored if needed.
+                </Label>
+                <ButtonMenu actions={menuActions} items={menuItems} />
                 {resultData ? (
-                  <DeletedConstraintsTable
-                    onRowSelect={onRowSelect}
-                    deleteSelected={deleteSelected}
-                    markNavigatedOutputRow={markNavigatedOutputRow}
-                    setSelectedOutputRows={setSelectedOutputRows}
-                    setResultData={setResultData}
-                    resultData={resultData}
-                    diffData={diffData}
-                    selectedOutputRows={selectedOutputRows}
-                  />
+                  <>
+                    <DeletedConstraintsTable
+                      onRowSelect={onRowSelect}
+                      deleteSelected={deleteSelected}
+                      markNavigatedOutputRow={markNavigatedOutputRow}
+                      setSelectedOutputRows={setSelectedOutputRows}
+                      setResultData={setResultData}
+                      resultData={resultData}
+                      diffData={diffData}
+                      selectedOutputRows={selectedOutputRows}
+                    />
+                  </>
                 ) : null}
-                <div style={{ margin: 10 }} />
-                <FlexBox justifyContent="SpaceBetween">
-                  <Button
-                    icon="reset"
-                    onClick={() => setResultData(originalResultData)}
-                  >
-                    Reset Violated Constraints
-                  </Button>
-                  <Button icon="opportunity" onClick={() => navigate('/table')}>
-                    Show Current
-                  </Button>
-                  <Button
-                    icon="opportunity"
-                    onClick={() => navigate('/unmapped-constraints-table')}
-                  >
-                    Show Unmapped
-                  </Button>
-                </FlexBox>
               </>
             }
           />
@@ -467,38 +457,25 @@ const ConformanceCheckingSection = () => {
             element={
               <>
                 <ChartBar />
-                <div
-                  style={{
-                    height: '100%',
-                    display: 'flex',
-                    alignItems: 'center',
-                    flexDirection: 'row-reverse',
-                  }}
-                ></div>
+                <Title>Unmapped Constraints</Title>
+                <Label wrappingType={WrappingType.Normal}>
+                  These constraints could not be mapped onto an event.
+                </Label>
+                <ButtonMenu actions={menuActions} items={menuItems} />
                 {resultData ? (
-                  <UnmappedConstraintsTable
-                    onRowSelect={onRowSelect}
-                    deleteSelected={deleteSelected}
-                    markNavigatedOutputRow={markNavigatedOutputRow}
-                    setSelectedOutputRows={setSelectedOutputRows}
-                    setResultData={setResultData}
-                    resultData={resultData}
-                    unmappedData={unmappedData}
-                    selectedOutputRows={selectedOutputRows}
-                  />
+                  <>
+                    <UnmappedConstraintsTable
+                      onRowSelect={onRowSelect}
+                      deleteSelected={deleteSelected}
+                      markNavigatedOutputRow={markNavigatedOutputRow}
+                      setSelectedOutputRows={setSelectedOutputRows}
+                      setResultData={setResultData}
+                      resultData={resultData}
+                      unmappedData={unmappedData}
+                      selectedOutputRows={selectedOutputRows}
+                    />
+                  </>
                 ) : null}
-                <div style={{ margin: 10 }} />
-                <FlexBox justifyContent="SpaceBetween">
-                  <Button
-                    icon="opportunity"
-                    onClick={() => navigate('/deleted-constraints-table')}
-                  >
-                    Show Diff
-                  </Button>
-                  <Button icon="opportunity" onClick={() => navigate('/table')}>
-                    Show Current
-                  </Button>
-                </FlexBox>
               </>
             }
           />
@@ -632,8 +609,14 @@ const ConformanceCheckingSection = () => {
                           }),
                           metadata: data,
                           hovertemplate:
-                            'occurred: %{value} times %{customdata} <b></b><extra></extra>',
-                          label: data.map((x) => x.name),
+                            'occurred: %{value} times | %{customdata} <b></b><extra></extra>',
+                          label: [
+                            ...data,
+                            { name: 'Group' },
+                            { name: 'Group II' },
+                            { name: 'Group III' },
+                            { name: 'Group IV' },
+                          ].map((x) => x.name),
                           color: data.map((x) => {
                             const a = find(
                               uniqBy(faultyEvents, 'faultyEvent'),
