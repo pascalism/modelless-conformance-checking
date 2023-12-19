@@ -21,10 +21,17 @@ import {
   differenceWith,
   sum,
   divide,
+  multiply,
 } from 'lodash';
 import reduceToSankeyArray from './SankeyChart/reduceToSankeyArray';
 import Plot from 'react-plotly.js';
-import { deleteSelected, colors, findLabel, sankeyColors } from './util';
+import {
+  deleteSelected,
+  colors,
+  findLabel,
+  sankeyColors,
+  toFixed,
+} from './util';
 import {
   findFaultyEventFromFaultyEventsArray,
   reduceFaultyEventsArray,
@@ -162,15 +169,15 @@ const ConformanceCheckingSection = () => {
           faultyEventsFromVariant,
         };
       });
-      console.log(
-        sum(enhancedRows.filter((x) => !x.isFaulty).map((x) => x.measure)),
-        sum(enhancedRows.map((x) => x.measure))
-      );
+
       setConformanceScore(
-        divide(
-          sum(enhancedRows.filter((x) => !x.isFaulty).map((x) => x.measure)),
-          sum(enhancedRows.map((x) => x.measure))
-        ).toFixed(3)
+        toFixed(
+          divide(
+            sum(enhancedRows.filter((x) => !x.isFaulty).map((x) => x.measure)),
+            sum(enhancedRows.map((x) => x.measure))
+          ),
+          3
+        )
       );
 
       const newData = valueFormatter({ data: enhancedRows });
@@ -278,9 +285,15 @@ const ConformanceCheckingSection = () => {
                     <Badge
                       style={{ width: 250, height: 20, cursor: 'pointer' }}
                       onClick={() => setScoreInPercentage(!scoreInPercentage)}
+                      title={
+                        'Calculates conformant variants divided by all variants'
+                      }
                     >
                       {scoreInPercentage
-                        ? `Conformance Score: ${conformanceScore * 100}%`
+                        ? `Conformance Score: ${multiply(
+                            (parseFloat(conformanceScore) * 100).toFixed(2) +
+                              '%'
+                          )}`
                         : `Conformance Score: ${conformanceScore}`}
                     </Badge>
                     <Button onClick={() => navigate('/')} design="Emphasized">

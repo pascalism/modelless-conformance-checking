@@ -109,3 +109,8 @@ export const useDetectOutsideClick = (el, initialState, capture = false) => {
 
 export const objectMap = (obj, fn) =>
   Object.fromEntries(Object.entries(obj).map(([k, v], i) => [k, fn(v, k, i)]));
+
+export const toFixed = (num, fixed) => {
+  const re = new RegExp('^-?\\d+(?:.\\d{0,' + (fixed || -1) + '})?');
+  return num.toString().match(re)[0];
+};
