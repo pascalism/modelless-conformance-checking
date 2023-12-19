@@ -180,11 +180,11 @@ const EventlogConfig = ({
             .
           </Label>
           <br />
-          <FileUploader hideInput style={{ margin: 20 }}>
-            <Avatar icon="upload" />
+          <FileUploader hideInput style={{ margin: 20 }} disabled>
+            <Avatar icon="upload" disabled />
           </FileUploader>
-          <FileUploader hideInput>
-            <Badge>{'Upload file'}</Badge>
+          <FileUploader hideInput disabled>
+            <Badge disabled>{'Upload file'}</Badge>
           </FileUploader>
           <Title>Use pre-configured Event log</Title>
           <Select
