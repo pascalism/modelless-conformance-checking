@@ -83,7 +83,7 @@ const ConformanceCheckingSection = () => {
       'runningexample.xes-recommended_constraintsv_newcolumn.csv'
     );
 
-    fetchFiles(setCsvResultData, 'runningexample.xes-violations_newcolumn.csv');
+    fetchFiles(setCsvResultData, 'test.csv');
   }, []);
 
   const { data, links } = reduceToSankeyArray(variantData);

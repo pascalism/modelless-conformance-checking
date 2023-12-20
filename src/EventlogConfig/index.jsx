@@ -69,7 +69,16 @@ const EventlogConfig = ({
   */
   useEffect(() => {
     switch (selectedFile) {
-      case 'Test Log':
+      case 'Demo Log':
+        fetchFile(
+          setCsvRecommendationData,
+          'runningexample.xes-recommended_constraintsv_newcolumn.csv'
+        );
+        fetchFile(setCsvResultData, 'test.csv');
+        setVariantData(variant_array_short);
+        setOriginalVariantData(variant_array_short);
+        return;
+      case 'Small Purchase Order Log':
         fetchFile(
           setCsvRecommendationData,
           'runningexample.xes-recommended_constraintsv_newcolumn.csv'
@@ -199,8 +208,12 @@ const EventlogConfig = ({
                 value: '',
               },
               {
-                text: 'Test Log',
+                text: 'Demo Log',
                 value: 'test_log',
+              },
+              {
+                text: 'Small Purchase Order Log',
+                value: 'po_log',
               },
               {
                 text: 'Salesforce Log',
