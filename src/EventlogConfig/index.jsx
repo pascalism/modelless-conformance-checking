@@ -102,6 +102,15 @@ const EventlogConfig = ({
         setVariantData(variant_array_salesforce);
         setOriginalVariantData(variant_array_salesforce);
         return;
+      case 'Salesforce Demo Log':
+        fetchFile(
+          setCsvRecommendationData,
+          'borodoro_2_0-events.pkl-recommended_constraints.csv'
+        );
+        fetchFile(setCsvResultData, 'salesforce_demo.csv');
+        setVariantData(variant_array_salesforce);
+        setOriginalVariantData(variant_array_salesforce);
+        return;
       case 'BPI Challenge Log':
         fetchFile(
           setCsvRecommendationData,
@@ -210,6 +219,10 @@ const EventlogConfig = ({
               {
                 text: 'Demo Log',
                 value: 'test_log',
+              },
+              {
+                text: 'Salesforce Demo Log',
+                value: 'salesforce_demo_log',
               },
               {
                 text: 'Small Purchase Order Log',
